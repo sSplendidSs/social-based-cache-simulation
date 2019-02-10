@@ -12,7 +12,7 @@ files = list()
 PING = list()
 social_factor = list()
 cache_list = list()
-capacity = 8*1024 #GB
+capacity = 4*1024 #GB
 occupation = 0
 bitrate = 0
 w = 100 #Mbps
@@ -103,8 +103,8 @@ def cal_social():
 	print(social_factor)
 
 def generate_data():
-	#video lenght
-	for i in range(100):
+	#video lenght (==size)
+	for i in range(1000):
 		buf = np.random.normal(6,8)
 		if buf >1 :
 			viedo_lenght.append(int(buf*10)/10)
@@ -115,25 +115,22 @@ def generate_data():
 					viedo_lenght.append(int(buf*10)/10)
 					break
 
-	#creat random normal ping
-	seed = list()
+	#creat random normal ping (network condition)
 	for i in range(1000):	
 		buf = np.random.normal(55,50)
 		if buf >5:
-			seed.append(int(buf))
+			PING.append(int(buf))
 		else:
 			while 1:
 				buf = np.random.normal(55,50)
 				if buf >5 and buf <60:
-					seed.append(int(buf))
+					PING.append(int(buf))
 					break
-	for i in range(1000):
-		PING.append(seed[np.random.randint(0,100)])
 	#print(PING)
 
 #creat files	
 def creat_files():		
-	for i in range(100):
+	for i in range(1000):
 		name = str(i)
 		#480p
 		size = viedo_lenght[i]*50
@@ -143,8 +140,20 @@ def creat_files():
 
 #creat requests
 def creat_requests():
-	for i in range(1000):
-		name = int(np.random.chisquare(50))
+	for i in range(500):
+		name = int(np.random.normal(500,100))
+		social = social_factor[i]
+		ping = PING[i]
+		new_request = request(name, social, ping)
+		requests.append(new_request)
+	for i in range(250):
+		name = int(np.random.normal(400,100))
+		social = social_factor[i]
+		ping = PING[i]
+		new_request = request(name, social, ping)
+		requests.append(new_request)
+	for i in range(250):
+		name = int(np.random.normal(600,100))
 		social = social_factor[i]
 		ping = PING[i]
 		new_request = request(name, social, ping)
@@ -162,11 +171,11 @@ creat_requests()
 
 for e in requests:
 	name = e.file_name
-	social_factor = e.social_factor
+	s = e.social_factor
 	ping = e.PING
 	#request_file
 	files[int(name)].count += 1
-	files[int(name)].score += social_factor
+	files[int(name)].score += s
 	files[int(name)].PING += ping
 
 #sort
@@ -178,39 +187,51 @@ for e in files:
 		
 		e.PING/=e.count
 		n = (1/w)/(1/R*e.PING/55+1/w)
-		#cache2
+	#cache2
 		if e.count*(1-n)*0.833333*1.024>=w:
 			print('crash')
-		#print(n)
-		'''print("score:")
+		print('name:')
+		print(e.file_name)
+		print('size')
+		print(e.file_size)
+		print('n:')
+		print(n)
+		print("score:")
 		print(e.score)
 		print("count:")
 		print(e.count)
 		print("ping:")
-		print(e.PING)'''
+		print(e.PING)
 		occupation += n*e.file_size
+	#C1
 		if occupation <=capacity:
 			bitrate+=5/6*1.024
 			cache_list.append(e.file_name)
+			#C2 ,降畫質
+			if bitrate>w:
+				bitrate-=5/6*1.024
+				bitrate+=25/60*1.024
+				print('to 720')
+			if bitrate>w:
+				bitrate-=25/60*1.024
+				bitrate+=8.3/60*1.024
+				print('to 480')
+			if bitrate>w:
+				bitrate-=8.3/60*1.024
+				bitrate+=5/60*1.024
+				print('to 360')
 		else:
-			bitrate+=2.7/60*1.024
 			print('full')
 			break
+#首次cache結果
 print(cache_list)
-
-cache_list.reverse()
-print(bitrate)
-#C2 ,降畫質
-for e in cache_list:
-	if bitrate>w:
-		bitrate-=5/6*1.024
-		bitrate+=25/60*1.024
-		print('to 720')
-	if bitrate>w:
-		bitrate-=25/60*1.024
-		bitrate+=8.3/60*1.024
-		print('to 480')
-	if bitrate>w:
-		bitrate-=8.3/60*1.024
-		bitrate+=5/60*1.024
-		print('to 360')
+'''
+requests = list()
+creat_requests(450)
+hit = 0
+for e in requests:
+	#print(e.file_name)
+	if str(e.file_name) in cache_list:
+		print(e.file_name)
+		hit+=1
+print(hit)'''
