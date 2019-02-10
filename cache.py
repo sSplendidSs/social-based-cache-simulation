@@ -14,7 +14,7 @@ social_factor = list()
 cache_list = list()
 capacity = 8*1024 #GB
 occupation = 0
-bitrate = 1
+bitrate = 0
 w = 100 #Mbps
 R = 22 #Mbps
 p = 300 #transcoding process
@@ -137,7 +137,7 @@ def creat_files():
 		name = str(i)
 		#480p
 		size = viedo_lenght[i]*50
-		print(size)
+		#print(size)
 		new_file = file(name, size)
 		files.append(new_file)
 
@@ -149,6 +149,10 @@ def creat_requests():
 		ping = PING[i]
 		new_request = request(name, social, ping)
 		requests.append(new_request)
+'''
+def degrade():
+	bitrate-=5/6*1.024
+	bitrate'''
 
 #cache 1 ,parse one slot of request
 cal_social()
@@ -171,9 +175,13 @@ files.sort(key=lambda x: x.score, reverse=True)
 for e in files:
 	#C3
 	if e.count>0:
+		
 		e.PING/=e.count
-		n = (1/w+1/p)/(1/R*e.PING/55+2/p+1/w)
-		print(n)
+		n = (1/w)/(1/R*e.PING/55+1/w)
+		#cache2
+		if e.count*(1-n)*0.833333*1.024>=w:
+			print('crash')
+		#print(n)
 		'''print("score:")
 		print(e.score)
 		print("count:")
@@ -182,8 +190,27 @@ for e in files:
 		print(e.PING)'''
 		occupation += n*e.file_size
 		if occupation <=capacity:
+			bitrate+=5/6*1.024
 			cache_list.append(e.file_name)
 		else:
+			bitrate+=2.7/60*1.024
 			print('full')
 			break
 print(cache_list)
+
+cache_list.reverse()
+print(bitrate)
+#C2 ,降畫質
+for e in cache_list:
+	if bitrate>w:
+		bitrate-=5/6*1.024
+		bitrate+=25/60*1.024
+		print('to 720')
+	if bitrate>w:
+		bitrate-=25/60*1.024
+		bitrate+=8.3/60*1.024
+		print('to 480')
+	if bitrate>w:
+		bitrate-=8.3/60*1.024
+		bitrate+=5/60*1.024
+		print('to 360')
