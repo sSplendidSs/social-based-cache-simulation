@@ -4,6 +4,15 @@ import math
 stalling = 
 QoE = quality/stalling
 '''
+#initialize necessary variable
+#parameter
+capacity = 1024 #GB
+w = 120 #Mbps
+p = 600 #transcoding process
+hit1 = 0
+hit2 = 0
+hit3 = 0
+mid = 0
 
 #file attribute class
 class file:
@@ -88,8 +97,11 @@ def cal_social():
 	#for i in range(len(social_factor)):
 	#	social_factor[i]=social_factor[i]/denominator*1000
 	#print(social_factor)
+	global mid
+	mid = sorted(social_factor)[500]
 
 def generate_data():
+	global preference
 	#video lenght (==size)
 	for i in range(1000):
 		#buf = np.random.normal(6,8)
@@ -126,14 +138,28 @@ def creat_files():
 		new_file = file(name, size)
 		files.append(new_file)
 
+def init_requests():
+	for i in range(1000):
+		social = social_factor[i]
+		#print(int(4*social/mid))
+		for j in range(int(4*social/mid)):
+			a = int(np.random.poisson(preference[i]))
+			while a<0 or a>999:
+				a = int(np.random.poisson(preference[i]))
+			#a = np.random.randint(0,1000)
+			name = str(a)
+			ping = wu[i]
+			new_request = request(name, social, ping)
+			requests.append(new_request)
+
 def creat_requests():
 	for i in range(1000):
 		social = social_factor[i]
-		#print(int(50*social/max(social_factor)))
-		for j in range(int(40*social/max(social_factor))):
-			a = int(np.random.chisquare(preference[i]))
+		#print(int(4*social/mid))
+		for j in range(int(4*social/mid)):
+			a = int(np.random.poisson(preference[i]))
 			while a<0 or a>999:
-				a = int(np.random.chisquare(preference[i]))
+				a = int(np.random.poisson(preference[i]))
 			#a = np.random.randint(0,1000)
 			name = str(a)
 			ping = wu[i]
@@ -157,10 +183,12 @@ def collect():
 		files[int(name)].count += 1
 		files[int(name)].score += s
 		files[int(name)].PING = (files[int(name)].PING *(files[int(name)].count-1) + ping)/files[int(name)].count
-hit1 = 0
-hit2 = 0
-hit3 = 0
-for n in range(10):
+
+#def compare():
+#	global hit1,hit2,hit3
+
+for n in range(15):
+	
 	#initialize necessary variable
 
 	#store one slot of request
@@ -174,25 +202,16 @@ for n in range(10):
 	preference = list()
 	#store every user's social factor
 	social_factor = list()
-	#store cached file name
-	cache_list = list()
 	intimate = list()
 
-	#parameter
-	capacity = 4*1024 #GB
-	occupation = 0
-	w = 120 #Mbps
-	p = 600 #transcoding process
-
-	#cache 1 ,parse one slot of request
 	cal_social()
 	generate_data()
 	creat_files()
-	creat_requests()
+	#cache 1 ,parse one slot of request
+	init_requests()
 	collect()
 	print(len(requests))
-
-
+	#compare()
 	#compare different algorithm
 	occupation3 = 0
 	cache_list3 = list()
@@ -208,45 +227,29 @@ for n in range(10):
 	#sort
 	files.sort(key=lambda x: x.score, reverse=True)
 
+	occupation = 0
+	cache_list = list()
 	#our algorithm
 	for e in files:
 		#C3
 		if e.count>0:
 			n = (1/w+1/p)/(1/e.PING+2/p+1/w)
-			#print(n)
 		#cache2
 			#if e.count*(1-n)*0.833333*1.024>=w:
 			#	print('crash')
-			'''print('name:')
-			print(e.file_name)
-			print('size')
-			print(e.file_size)
-			print('n:')
-			print(n)
-			print("score:")
-			print(e.score)
-			print("count:")
-			print(e.count)
-			print("ping:")
-			print(e.PING)'''
-			occupation += n*e.file_size
+			#print('name:')
+			#print(e.file_name)
+			#print("score:")
+			#print(e.score)
+			#print("count:")
+			#print(e.count)
+			#occupation += n*e.file_size
+			occupation += 100
 		#C1
 			if occupation <=capacity:
 				#bitrate+=5/6*1.024
 				cache_list.append(e.file_name)
 				#C2 ,降畫質
-				'''if bitrate>w:
-					bitrate-=5/6*1.024
-					bitrate+=25/60*1.024
-					print('to 720')
-				if bitrate>w:
-					bitrate-=25/60*1.024
-					bitrate+=8.3/60*1.024
-					print('to 480')
-				if bitrate>w:
-					bitrate-=8.3/60*1.024
-					bitrate+=5/60*1.024
-					print('to 360')'''
 			else:
 				print('full')
 				break
@@ -258,7 +261,8 @@ for n in range(10):
 	for e in files:
 		if e.count>0:
 			n = (1/w+1/p)/(1/e.PING+2/p+1/w)
-			occupation2 += n*e.file_size
+			#occupation2 += n*e.file_size
+			occupation2 += 100
 			if occupation2 <= capacity:
 				cache_list2.append(e.file_name)
 			else:
@@ -270,7 +274,7 @@ for n in range(10):
 	#print(cache_list2)
 	#print(cache_list3)
 
-	for i in range(10):
+	for i in range(15):
 		#第n次request
 		requests = list()
 		#creat_requests(450)
@@ -279,13 +283,12 @@ for n in range(10):
 		for r in requests:
 			#print(e.file_name)
 			if r.file_name in cache_list:
-				#print(e.file_name)
 				hit1+=1
 			if r.file_name in cache_list2:
 				hit2+=1
 			if r.file_name in cache_list3:
 				hit3+=1
 
-print(hit1/100)
-print(hit2/100)
-print(hit3/100)
+print(hit1/225)
+print(hit2/225)
+print(hit3/225)
