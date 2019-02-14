@@ -5,27 +5,6 @@ stalling =
 QoE = quality/stalling
 '''
 
-#initialize necessary variable
-
-#store one slot of request
-requests = list()
-viedo_lenght = list()
-#store requested file
-files = list()
-#store user network condition
-wu = list()
-#store every user's social factor
-social_factor = list()
-#store cached file name
-cache_list = list()
-
-#parameter
-capacity = 4*1024 #GB
-occupation = 0
-w = 120 #Mbps
-p = 600 #transcoding process
-
-
 #file attribute class
 class file:
 	#initialize
@@ -52,14 +31,16 @@ def cal_social():
 	#initialize
 	for i in range(1000):
 	    People_interact.append([])
-	#print(Peoinact)
+
 	for i in range(1000):
-	    interact_number.append(int(np.random.chisquare(2)))
+	    interact_number.append(int(np.random.chisquare(3)))
 
 	for i in range(1000):
 	    time_interact.append([])
+	    intimate.append([])
 	    for j in range(1000):
 	        time_interact[i].append([])
+	        intimate.append([])
 
 	#everyone's people interact distribution
 	for i in range(1000):
@@ -67,7 +48,6 @@ def cal_social():
 	        temp = np.random.randint(0,1000)
 	        if (temp not in People_interact[i]) and (temp != i):
 	            People_interact[i].append(temp)
-	#print(Peoinact)
 
 	#address multi problem
 	for i in range(1000):
@@ -75,26 +55,23 @@ def cal_social():
 	        if (i in People_interact[j]) and (j not in People_interact[i]):
 	            People_interact[i].append(j)
 	            interact_number[i]+=1
-	print(interact_number)
 	#sort
 	for i in range(1000):
 	    People_interact[i].sort()
-	print(People_interact)
 
 	#message time record
 	for i in range(1000):
 	    for j in range(i+1,1000):
 	        if j in People_interact[i]:
-	            a = np.random.chisquare(abs(np.random.normal(2)),100)
+	            a = np.random.chisquare(abs(np.random.normal(3)),100)
 	            for k in range(len(a)):
 	                if a[k]>5.:
 	                    time_interact[i][j].append(k)
 	                    time_interact[j][i].append(k)
-	#show
-	'''for i in range(1000):
+	for i in range(1000):
 	    for j in range(1000):
-	        print('user '+str(i)+' user '+str(j))
-	        print(tinact[i][j])'''
+	        if len(time_interact[i][j])>0:
+	        	intimate[i].append(j)
 
 	#count
 	denominator = 0
@@ -104,25 +81,26 @@ def cal_social():
 	        if len(time_interact[i][j])>0:
 	            for k in range(len(time_interact[i][j])):
 	                count+=math.exp(-time_interact[i][j][k]/350)
-	    count=math.sqrt(count)
+
+	    #count=count**(1/1.5)
 	    denominator += count*interact_number[i]
-	    social_factor.append(count*interact_number[i])
-	for i in range(len(social_factor)):
-		social_factor[i]=int(social_factor[i]/denominator*10000)
-
-
-	print(social_factor)
+	    social_factor.append(int(count*interact_number[i]*10)/10)
+	#for i in range(len(social_factor)):
+	#	social_factor[i]=social_factor[i]/denominator*1000
+	#print(social_factor)
 
 def generate_data():
 	#video lenght (==size)
 	for i in range(1000):
-		buf = np.random.normal(6,8)
+		#buf = np.random.normal(6,8)
+		buf = np.random.chisquare(8)
 		if buf >1 :
 			viedo_lenght.append(int(buf*10)/10)
 		else:
 			while 1:
-				buf = np.random.normal(6,8)
-				if buf <6 and buf >1:
+				#buf = np.random.normal(6,8)
+				buf = np.random.chisquare(8)
+				if buf <8 and buf >1:
 					viedo_lenght.append(int(buf*10)/10)
 					break
 
@@ -131,143 +109,183 @@ def generate_data():
 		buf = np.random.normal(48,10)
 		wu.append(buf)
 
+	#user preference
+	for i in range(1000):
+		'''a = int(np.random.normal(500,200))
+		while a<0 or a>999:
+				a = int(np.random.normal(500,200))'''
+		a = np.random.randint(1,1000)
+		preference.append(a)
+
 #creat files	
 def creat_files():		
 	for i in range(1000):
 		name = str(i)
-		#480p
+		#1080p
 		size = viedo_lenght[i]*50
-		#print(size)
 		new_file = file(name, size)
 		files.append(new_file)
 
-#creat requests
 def creat_requests():
 	for i in range(1000):
-		name = int(np.random.normal(500,100))
 		social = social_factor[i]
-		ping = wu[i]
-		new_request = request(name, social, ping)
-		requests.append(new_request)
-'''
-def degrade():
-	bitrate-=5/6*1.024
-	bitrate'''
+		#print(int(50*social/max(social_factor)))
+		for j in range(int(40*social/max(social_factor))):
+			a = int(np.random.chisquare(preference[i]))
+			while a<0 or a>999:
+				a = int(np.random.chisquare(preference[i]))
+			#a = np.random.randint(0,1000)
+			name = str(a)
+			ping = wu[i]
+			new_request = request(name, social, ping)
+			requests.append(new_request)
 
-#cache 1 ,parse one slot of request
-cal_social()
-generate_data()
-creat_files()
-creat_requests()
+			for e in intimate[i]:
+				social = social_factor[e]
+				name = str(a)
+				ping = wu[e]
+				new_request = request(name, social, ping)
+				requests.append(new_request)
 
-for e in requests:
-	name = e.file_name
-	s = e.social_factor
-	ping = e.PING
-	#request_file
-	files[int(name)].count += 1
-	files[int(name)].score += s
-	files[int(name)].PING += ping
-
-occupation3 = 0
-cache_list3 = list()
-for e in files:
-	if e.count>0:
-		occupation3+=e.file_size
-		if occupation3 <= capacity:
-			cache_list3.append(e.file_name)
-		else:
-			print('full')
-			break
-
-#sort
-files.sort(key=lambda x: x.score, reverse=True)
-#our algorithm
-for e in files:
-	#C3
-	if e.count>0:
-		
-		#e.PING/=e.count
-		n = (1/w+1/p)/(1/e.PING+2/p+1/w)
-		#print(n)
-	#cache2
-		if e.count*(1-n)*0.833333*1.024>=w:
-			print('crash')
-		'''print('name:')
-		print(e.file_name)
-		print('size')
-		print(e.file_size)
-		print('n:')
-		print(n)
-		print("score:")
-		print(e.score)
-		print("count:")
-		print(e.count)
-		print("ping:")
-		print(e.PING)'''
-		occupation += n*e.file_size
-	#C1
-		if occupation <=capacity:
-			#bitrate+=5/6*1.024
-			cache_list.append(e.file_name)
-			#C2 ,降畫質
-			'''if bitrate>w:
-				bitrate-=5/6*1.024
-				bitrate+=25/60*1.024
-				print('to 720')
-			if bitrate>w:
-				bitrate-=25/60*1.024
-				bitrate+=8.3/60*1.024
-				print('to 480')
-			if bitrate>w:
-				bitrate-=8.3/60*1.024
-				bitrate+=5/60*1.024
-				print('to 360')'''
-		else:
-			print('full')
-			break
-files.sort(key=lambda x: x.count, reverse=True)
-
-#popular algorithm
-occupation2=0
-cache_list2=list()
-for e in files:
-	if e.count>0:
-		e.PING/=e.count
-		n = (1/w+1/p)/(1/e.PING+2/p+1/w)
-		occupation2 += n*e.file_size
-		if occupation2 <= capacity:
-			cache_list2.append(e.file_name)
-		else:
-			print('full')
-			break
-			
-#首次cache結果
-print(cache_list)
-print(cache_list2)
-print(cache_list3)
-#第2次request
-requests = list()
-#creat_requests(450)
-for i in range(1000):
-	name = int(np.random.normal(450,100))
-	social = social_factor[i]
-	ping = wu[i]
-	new_request = request(name, social, ping)
-	requests.append(new_request)
-
+#parse the request
+def collect():
+	for e in requests:
+		name = e.file_name
+		s = e.social_factor
+		ping = e.PING
+		#request_file
+		files[int(name)].count += 1
+		files[int(name)].score += s
+		files[int(name)].PING = (files[int(name)].PING *(files[int(name)].count-1) + ping)/files[int(name)].count
 hit1 = 0
 hit2 = 0
 hit3 = 0
-for e in requests:
-	#print(e.file_name)
-	if str(e.file_name) in cache_list:
-		#print(e.file_name)
-		hit1+=1
-	if str(e.file_name) in cache_list2:
-		hit2+=1
-	if str(e.file_name) in cache_list3:
-		hit3+=1
-print(hit1)
-print(hit2)
-print(hit3)
+for n in range(10):
+	#initialize necessary variable
+
+	#store one slot of request
+	requests = list()
+	viedo_lenght = list()
+	#store requested file
+	files = list()
+	#store user network condition
+	wu = list()
+	#user's
+	preference = list()
+	#store every user's social factor
+	social_factor = list()
+	#store cached file name
+	cache_list = list()
+	intimate = list()
+
+	#parameter
+	capacity = 4*1024 #GB
+	occupation = 0
+	w = 120 #Mbps
+	p = 600 #transcoding process
+
+	#cache 1 ,parse one slot of request
+	cal_social()
+	generate_data()
+	creat_files()
+	creat_requests()
+	collect()
+	print(len(requests))
+
+
+	#compare different algorithm
+	occupation3 = 0
+	cache_list3 = list()
+	for e in files:
+		if e.count>0:
+			occupation3+=e.file_size
+			if occupation3 <= capacity:
+				cache_list3.append(e.file_name)
+			else:
+				print('full')
+				break
+
+	#sort
+	files.sort(key=lambda x: x.score, reverse=True)
+
+	#our algorithm
+	for e in files:
+		#C3
+		if e.count>0:
+			n = (1/w+1/p)/(1/e.PING+2/p+1/w)
+			#print(n)
+		#cache2
+			#if e.count*(1-n)*0.833333*1.024>=w:
+			#	print('crash')
+			'''print('name:')
+			print(e.file_name)
+			print('size')
+			print(e.file_size)
+			print('n:')
+			print(n)
+			print("score:")
+			print(e.score)
+			print("count:")
+			print(e.count)
+			print("ping:")
+			print(e.PING)'''
+			occupation += n*e.file_size
+		#C1
+			if occupation <=capacity:
+				#bitrate+=5/6*1.024
+				cache_list.append(e.file_name)
+				#C2 ,降畫質
+				'''if bitrate>w:
+					bitrate-=5/6*1.024
+					bitrate+=25/60*1.024
+					print('to 720')
+				if bitrate>w:
+					bitrate-=25/60*1.024
+					bitrate+=8.3/60*1.024
+					print('to 480')
+				if bitrate>w:
+					bitrate-=8.3/60*1.024
+					bitrate+=5/60*1.024
+					print('to 360')'''
+			else:
+				print('full')
+				break
+	files.sort(key=lambda x: x.count, reverse=True)
+
+	#popular algorithm
+	occupation2=0
+	cache_list2=list()
+	for e in files:
+		if e.count>0:
+			n = (1/w+1/p)/(1/e.PING+2/p+1/w)
+			occupation2 += n*e.file_size
+			if occupation2 <= capacity:
+				cache_list2.append(e.file_name)
+			else:
+				print('full')
+				break
+
+	#首次cache結果
+	#print(cache_list)
+	#print(cache_list2)
+	#print(cache_list3)
+
+	for i in range(10):
+		#第n次request
+		requests = list()
+		#creat_requests(450)
+		creat_requests()
+
+		for r in requests:
+			#print(e.file_name)
+			if r.file_name in cache_list:
+				#print(e.file_name)
+				hit1+=1
+			if r.file_name in cache_list2:
+				hit2+=1
+			if r.file_name in cache_list3:
+				hit3+=1
+
+print(hit1/100)
+print(hit2/100)
+print(hit3/100)
