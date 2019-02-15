@@ -1,8 +1,10 @@
 import numpy as np
 import math
-'''quality = 
-stalling = 
-QoE = quality/stalling
+
+##調參數:
+'''
+stalling = 0
+QoE = a*bitrate +c*stalling
 '''
 #initialize necessary variable
 #parameter
@@ -42,14 +44,15 @@ def cal_social():
 	    People_interact.append([])
 
 	for i in range(1000):
-	    interact_number.append(int(np.random.chisquare(3)))
+	    interact_number.append(int(np.random.chisquare(15)))
 
 	for i in range(1000):
 	    time_interact.append([])
-	    intimate.append([])
 	    for j in range(1000):
 	        time_interact[i].append([])
-	        intimate.append([])
+
+	for i in range(1000):
+		intimate.append([])
 
 	#everyone's people interact distribution
 	for i in range(1000):
@@ -77,12 +80,13 @@ def cal_social():
 	                if a[k]>5.:
 	                    time_interact[i][j].append(k)
 	                    time_interact[j][i].append(k)
+	#cal intimate
 	for i in range(1000):
 	    for j in range(1000):
 	        if len(time_interact[i][j])>0:
 	        	intimate[i].append(j)
 
-	#count
+	#count social factor
 	denominator = 0
 	for i in range(1000):
 	    count = 0
@@ -91,9 +95,9 @@ def cal_social():
 	            for k in range(len(time_interact[i][j])):
 	                count+=math.exp(-time_interact[i][j][k]/350)
 
-	    #count=count**(1/1.5)
+	    #count=math.log(count+1)
 	    denominator += count*interact_number[i]
-	    social_factor.append(int(count*interact_number[i]*10)/10)
+	    social_factor.append(int(count*interact_number[i]*interact_number[i]*10)/10)
 	#for i in range(len(social_factor)):
 	#	social_factor[i]=social_factor[i]/denominator*1000
 	#print(social_factor)
@@ -101,7 +105,6 @@ def cal_social():
 	mid = sorted(social_factor)[500]
 
 def generate_data():
-	global preference
 	#video lenght (==size)
 	for i in range(1000):
 		#buf = np.random.normal(6,8)
@@ -126,7 +129,7 @@ def generate_data():
 		'''a = int(np.random.normal(500,200))
 		while a<0 or a>999:
 				a = int(np.random.normal(500,200))'''
-		a = np.random.randint(1,1000)
+		a = np.random.randint(0,1000)
 		preference.append(a)
 
 #creat files	
@@ -139,28 +142,31 @@ def creat_files():
 		files.append(new_file)
 
 def init_requests():
+	#init
+	for i in range(1000):
+		buf_requests.append([])
 	for i in range(1000):
 		social = social_factor[i]
 		#print(int(4*social/mid))
-		for j in range(int(4*social/mid)):
-			a = int(np.random.poisson(preference[i]))
+		for j in range(5):
+			a = int(preference[i])
 			while a<0 or a>999:
 				a = int(np.random.poisson(preference[i]))
-			#a = np.random.randint(0,1000)
 			name = str(a)
+			buf_requests[i].append(name)
 			ping = wu[i]
 			new_request = request(name, social, ping)
 			requests.append(new_request)
 
 def creat_requests():
+
 	for i in range(1000):
 		social = social_factor[i]
 		#print(int(4*social/mid))
-		for j in range(int(4*social/mid)):
-			a = int(np.random.poisson(preference[i]))
+		for j in range(8*int(social/mid)):
+			a = int(preference[i])
 			while a<0 or a>999:
 				a = int(np.random.poisson(preference[i]))
-			#a = np.random.randint(0,1000)
 			name = str(a)
 			ping = wu[i]
 			new_request = request(name, social, ping)
@@ -187,7 +193,7 @@ def collect():
 #def compare():
 #	global hit1,hit2,hit3
 
-for n in range(15):
+for n in range(5):
 	
 	#initialize necessary variable
 
@@ -203,6 +209,7 @@ for n in range(15):
 	#store every user's social factor
 	social_factor = list()
 	intimate = list()
+	buf_requests = list()
 
 	cal_social()
 	generate_data()
@@ -221,7 +228,7 @@ for n in range(15):
 			if occupation3 <= capacity:
 				cache_list3.append(e.file_name)
 			else:
-				print('full')
+				#print('full')
 				break
 
 	#sort
@@ -251,7 +258,7 @@ for n in range(15):
 				cache_list.append(e.file_name)
 				#C2 ,降畫質
 			else:
-				print('full')
+				#print('full')
 				break
 	files.sort(key=lambda x: x.count, reverse=True)
 
@@ -266,19 +273,20 @@ for n in range(15):
 			if occupation2 <= capacity:
 				cache_list2.append(e.file_name)
 			else:
-				print('full')
+				#print('full')
 				break
 
 	#首次cache結果
-	#print(cache_list)
-	#print(cache_list2)
+	print(cache_list)
+	print(cache_list2)
 	#print(cache_list3)
 
-	for i in range(15):
+	for i in range(5):
 		#第n次request
 		requests = list()
 		#creat_requests(450)
 		creat_requests()
+		print(len(requests))
 
 		for r in requests:
 			#print(e.file_name)
@@ -289,6 +297,7 @@ for n in range(15):
 			if r.file_name in cache_list3:
 				hit3+=1
 
-print(hit1/225)
-print(hit2/225)
-print(hit3/225)
+print(hit1/25)
+print(hit2/25)
+print(hit3/25)
+print(hit1/hit2)
