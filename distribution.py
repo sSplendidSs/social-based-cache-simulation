@@ -18,7 +18,7 @@ for i in range(10):
         tinact[i].append([])
 
 #everyone's people interact distribution
-for i in range(0,10):
+for i in range(10):
     for j in range(Ninact[i]):
         temp = np.random.randint(0,10)
         if (temp not in Peoinact[i]) and (temp != i):
