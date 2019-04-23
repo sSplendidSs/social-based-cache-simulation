@@ -2,20 +2,23 @@ import numpy as np
 import math
 
 ##調參數:
-'''
+
 stalling = 0
-QoE = a*bitrate +c*stalling
-'''
+a = 0.5
+c = 0.5
+#QoE = a*bitrate +c*stalling
+
 #initialize necessary variable
 #parameter
-capacity = 1024 #GB
-w = 120 #Mbps
+capacity = 8*1024 #MB
+w = 220 #Mbps
 p = 600 #transcoding process
 hit1 = 0
 hit2 = 0
 hit3 = 0
 mid = 0
-
+social_factor = list()
+intimate = list()
 #file attribute class
 class file:
 	#initialize
@@ -29,11 +32,13 @@ class file:
 #request attribute class
 class request:
 	#initialize
-	def __init__(self, file_name, social_factor, network_condition):
+	#def __init__(self, file_name, social_factor, network_condition,source):
+	def __init__(self, file_name, social_factor):
 		self.file_name = file_name
 		self.social_factor = social_factor 
-		self.PING = network_condition
-		
+		#self.PING = network_condition
+		#self.source = source
+
 def cal_social():
 	interact_number = list()
 	People_interact = list()
@@ -44,7 +49,7 @@ def cal_social():
 	    People_interact.append([])
 
 	for i in range(1000):
-	    interact_number.append(int(np.random.chisquare(15)))
+	    interact_number.append(int(np.random.chisquare(3)))
 
 	for i in range(1000):
 	    time_interact.append([])
@@ -104,9 +109,25 @@ def cal_social():
 	global mid
 	mid = sorted(social_factor)[500]
 
+wait_watch=list()
+requests=list()
+social_factor=list()
+cal_social()
+print(People_interact)
+print(time_interact)
+print(social_factor)
+#creat request
+for i in range(1000):
+	name=np.random.uniform(0,100)
+	new_request=request(name,social_factor[i])
+	requests.append(new_request)
+	#for j in 
+
+
+"""
 def generate_data():
 	#video lenght (==size)
-	for i in range(1000):
+	'''for i in range(1000):
 		#buf = np.random.normal(6,8)
 		buf = np.random.chisquare(8)
 		if buf >1 :
@@ -117,11 +138,13 @@ def generate_data():
 				buf = np.random.chisquare(8)
 				if buf <8 and buf >1:
 					viedo_lenght.append(int(buf*10)/10)
-					break
+					break'''
+	for i in range(1000):
+		viedo_lenght.append(8)
 
 	#creat random normal network condition (network condition)
 	for i in range(1000):	
-		buf = np.random.normal(48,10)
+		buf = np.random.normal(44,10)
 		wu.append(buf)
 
 	#user preference
@@ -129,7 +152,7 @@ def generate_data():
 		'''a = int(np.random.normal(500,200))
 		while a<0 or a>999:
 				a = int(np.random.normal(500,200))'''
-		a = np.random.randint(0,1000)
+		a = np.random.uniform(0,1000)
 		preference.append(a)
 
 #creat files	
@@ -148,14 +171,15 @@ def init_requests():
 	for i in range(1000):
 		social = social_factor[i]
 		#print(int(4*social/mid))
-		for j in range(5):
+		for j in range(10):
 			a = int(preference[i])
 			while a<0 or a>999:
 				a = int(np.random.poisson(preference[i]))
 			name = str(a)
 			buf_requests[i].append(name)
 			ping = wu[i]
-			new_request = request(name, social, ping)
+			source = str(i)
+			new_request = request(name, social, ping, source)
 			requests.append(new_request)
 
 def creat_requests():
@@ -163,20 +187,22 @@ def creat_requests():
 	for i in range(1000):
 		social = social_factor[i]
 		#print(int(4*social/mid))
-		for j in range(8*int(social/mid)):
+		for j in range(4*int(social/mid)):
 			a = int(preference[i])
 			while a<0 or a>999:
 				a = int(np.random.poisson(preference[i]))
 			name = str(a)
 			ping = wu[i]
-			new_request = request(name, social, ping)
+			source = str(i)
+			new_request = request(name, social, ping, source)
 			requests.append(new_request)
 
 			for e in intimate[i]:
 				social = social_factor[e]
 				name = str(a)
 				ping = wu[e]
-				new_request = request(name, social, ping)
+				source = str(i)
+				new_request = request(name, social, ping, source)
 				requests.append(new_request)
 
 #parse the request
@@ -226,7 +252,8 @@ for n in range(5):
 		if e.count>0:
 			occupation3+=e.file_size
 			if occupation3 <= capacity:
-				cache_list3.append(e.file_name)
+				if e.file_name not in cache_list3:
+					cache_list3.append(e.file_name)
 			else:
 				#print('full')
 				break
@@ -254,9 +281,10 @@ for n in range(5):
 			occupation += 100
 		#C1
 			if occupation <=capacity:
-				#bitrate+=5/6*1.024
-				cache_list.append(e.file_name)
+				if e.file_name not in cache_list:
+					cache_list.append(e.file_name)
 				#C2 ,降畫質
+
 			else:
 				#print('full')
 				break
@@ -271,7 +299,8 @@ for n in range(5):
 			#occupation2 += n*e.file_size
 			occupation2 += 100
 			if occupation2 <= capacity:
-				cache_list2.append(e.file_name)
+				if e.file_name not in cache_list2:
+					cache_list2.append(e.file_name)
 			else:
 				#print('full')
 				break
@@ -286,18 +315,62 @@ for n in range(5):
 		requests = list()
 		#creat_requests(450)
 		creat_requests()
-		print(len(requests))
-
+		QoE1 = 0
+		QoE2 = 0
+		hit1_b = 0
+		hit2_b = 0
+		#第一次,蒐集需下載的總人數
 		for r in requests:
-			#print(e.file_name)
 			if r.file_name in cache_list:
 				hit1+=1
+				hit1_b+=1
 			if r.file_name in cache_list2:
 				hit2+=1
-			if r.file_name in cache_list3:
-				hit3+=1
+				hit2_b+=1
+		not_cached1 = len(requests)-hit1_b
+		not_cached2 = len(requests)-hit2_b
+
+		#正式算QoE
+		for r in requests:
+			required_bitrate = 5/6
+			if r.file_name in cache_list:
+				stalling = 0
+				bitrate = required_bitrate
+			else:
+				if w/not_cached1 >= required_bitrate:
+					bitrate = required_bitrate
+					stalling = 0
+				elif w/not_cached1 <(1.9/60):
+					bitrate = w/not_cached1
+					stalling = 1 - bitrate/(1.9/60)
+				else:
+					bitrate = w/not_cached1
+					stalling = 0
+			QoE1 +=(0.3*bitrate-0.5*stalling)
+			#print(bitrate)
+			#sprint(stalling)
+
+		#正式算QoE
+		for r in requests:
+			required_bitrate = 5/6
+			if r.file_name in cache_list:
+				stalling = 0
+				bitrate = required_bitrate
+			else:
+				if w/not_cached2 >= required_bitrate:
+					bitrate = required_bitrate
+					stalling = 0
+				elif w/not_cached2 <(1.9/60):
+					bitrate = w/not_cached2
+					stalling = 1 - bitrate/(1.9/60)
+				else:
+					bitrate = w/not_cached2
+					stalling = 0
+
+			QoE2 +=(0.3*bitrate-0.5*stalling)
 
 print(hit1/25)
 print(hit2/25)
 print(hit3/25)
 print(hit1/hit2)
+print(QoE1/QoE2)"""
