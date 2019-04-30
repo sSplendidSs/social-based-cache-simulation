@@ -7,15 +7,15 @@ time_interact = list()
 social_factor = list()
 cache_list=list()
 cache_list2=list()
+cache_list3=list()
 wait_watch = list()
 intimate = list()
 requests=list()
 files = list()
+
 capacity = 1024 #MB
-
-
-for i in range(100):
-	wait_watch.append([])
+w = 220 #Mbps
+p = 600 #transcoding process
 
 class request:
 	def __init__(self, file_name, social_factor):
@@ -119,13 +119,24 @@ def parse_request():
 
 	occupation = 0
 	occupation2 = 0
+	occupation3 = 0
 	cache_list.clear()
 	cache_list2.clear()
+	cache_list3.clear()
+
 	for e in requests:
 		name = e.file_name
 		s = e.social_factor
 		files[int(name)].count += 1
 		files[int(name)].score += s
+
+	for e in files:
+		if occupation3 <=capacity:
+			if e.file_name not in cache_list3:
+				cache_list3.append(e.file_name)
+				occupation3 += 100
+		else:
+			break	
 
 	files.sort(key=lambda x: x.score, reverse=True)
 
@@ -133,7 +144,7 @@ def parse_request():
 		if occupation <=capacity:
 			if e.file_name not in cache_list:
 				cache_list.append(e.file_name)
-				occupation += 40
+				occupation += 33
 		else:
 			break
 
@@ -150,6 +161,10 @@ def parse_request():
 def evaluate():
 	global hit1
 	global hit2
+	global hit3
+	global QoE1
+	global QoE2
+	global QoE3
 	requests.clear()
 
 	for i in range(100):
@@ -166,23 +181,65 @@ def evaluate():
 			hit1+=1
 		if r.file_name in cache_list2:
 			hit2+=1
+		if r.file_name in cache_list3:
+			hit3+=1
 
+	for r in requests:
+		required_bitrate = 5/6
+		if r.file_name in cache_list:
+			bitrate = 5
+			stalling=0
+		else:
+			bitrate=1
+			stalling=3
+		QoE1 +=(0.3*bitrate-0.5*stalling)
 
+	for r in requests:
+		required_bitrate = 5/6
+		if r.file_name in cache_list2:
+			bitrate = 5
+			stalling=0
+		else:
+			bitrate=1
+			stalling=3
+		QoE2 +=(0.3*bitrate-0.5*stalling)
+
+	for r in requests:
+		required_bitrate = 5/6
+		if r.file_name in cache_list3:
+			bitrate = 5
+			stalling=0
+		else:
+			bitrate=1
+			stalling=3
+		QoE3 +=(0.3*bitrate-0.5*stalling)
 
 cal_social()
+
 for i in range(15):
 	capacity=256*(i+1)		
 	hit1=0
 	hit2=0
-	for j in range(5):
+	hit3=0
+
+	QoE1=0
+	QoE2=0
+	QoE3=0
+
+	for j in range(10):
 
 		creat_file()
 		creat_request()
 		parse_request()
 		evaluate()
+
 	print(i)
-	print(hit1/5200)
-	print(hit2/5200)
+	print(hit1/11000)
+	print(hit2/11000)
+	print(hit3/11000)
+	print(QoE1)
+	print(QoE2)
+	print(QoE3)
 	#print(wait_watch)
 '''
 print(People_interact)
