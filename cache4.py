@@ -1,4 +1,3 @@
-#import statistics
 import numpy as np
 graph=dict()
 interaction=list()
