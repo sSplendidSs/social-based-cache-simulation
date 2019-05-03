@@ -107,13 +107,21 @@ for e in files:
 print(cache_list)
 print(cache_list2)
 
+wait_watch=list()
 
+for i in range(900):
+	wait_watch.append([])
 #evaluate
 for i in range(1900):
 	for j in range(1900):
 		if interaction[i][j] >0:
 			#if np.random.uniform(0,100)/100.0>=interaction[i][j]:
 			requests.append(preference[i])
+			wait_watch[preference[i]].append(i)
+
+for i in range(900):
+	for j in range(2*len(wait_watch[i])):
+		requests.append(i)
 hit1=0
 hit2=0
 for e in requests:
@@ -121,6 +129,7 @@ for e in requests:
 		hit1+=1
 	if e in cache_list2:
 		hit2+=1
+
 print(len(requests))
 print(float(hit1)/hit2)
 print(hit1/float(len(requests)))
@@ -145,5 +154,4 @@ for i in range(1900):
 #parse request
 for e in files:
 	for i in e:
-
 '''
