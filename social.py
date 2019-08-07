@@ -1,3 +1,4 @@
+from statsmodels.tsa.arima_model import ARIMA
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -14,45 +15,67 @@ class file:
 		self.realcount = 0
 class user:
 	def __init__(self):
-		self.watching = False
 		self.watched = set()
 		self.wait_watch = set()
-		self.wait2 = set()
-		self.interaction = [0]*1900
-		self.iswatching = False
+		self.wait_buf = set()
+		self.interaction = []
+		self.model=[0]*1900
+		self.connect = [0]*1900
+		self.edge = [0]*1900
+		self.social_factor=0
+		self.online=set()
+
 users=list()
 requests=list()
 interaction=list()
-social_factor=list()
 #init
 def init():
 	for i in range(1900):
 		users.append(user())
+		for j in range(1900):
+			users[i].interaction.append([])
+
 	with open('CollegeMsg.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
-			users[int(edge[i])].interaction[int(edge[i+1])] += 1
-			users[int(edge[i+1])].interaction[int(edge[i])] += 1
+			timestamp=int((int(edge[i+2])-1082040961)/60/60)
+			users[int(edge[i])].interaction[int(edge[i+1])].append(timestamp)
+			users[int(edge[i])].connect[int(edge[i+1])]+=1
+			users[int(edge[i])].online.add(int(timestamp/24))
 			i+=3
-		for i in range(1900):
-			m=float(max(users[i].interaction))
-			if m==0:
-				continue
-			for j in range(1900):
-				users[i].interaction[j]/=m
-				#print(users[i].interaction[j])
-		for i in range(1900):
-			social_factor.append(sum(users[i].interaction))
-		#for e in users:
-		#	print(e.interaction)
 
-w=600*1024*1024*8
+	for i in range(1900):
+		for j in range(1900):
+			if users[i].connect[j]>10:
+				y=list()
+				buf=list()
+				index=0
+				for k in range(4632):
+					if k in users[i].interaction[j]:
+						buf.append(1)
+
+					if index==24:
+						y.append(sum(buf))
+						index=0
+						buf.clear()
+					index+=1
+
+				m=max(y)
+				print(i,j)
+				for k in range(len(y)):
+					y[k]*=2
+					y[k]/=m
+				users[i].interaction[j]=y
+				model = ARIMA(y, order=(1,0,0))
+				users[i].model[j] = model.fit(disp=0)
+
+w=500*1024*1024*8
 alpha=1.2
-capacity=0
-interval=100
-times=5
-x_num=15
+capacity=500
+interval=193
+times=1
+x_num=2
 file_num=400
 #our
 cache_list=set()
@@ -85,12 +108,17 @@ for n in range(x_num):
 	cache_list3=set()
 	#LFU
 	cache_list4=set()
-	#greedy
-	cache_list5=set()
 
 	for u in range(times):
 
 		for i in range(interval):
+
+			for a in range(1900):
+				for b in range(1900):
+					if users[a].connect[b]>10:
+						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
+				users[a].social_factor=sum(users[a].edge)
+				#print(users[a].social_factor)
 			occupation=0
 			occupation2=0
 			
@@ -103,7 +131,7 @@ for n in range(x_num):
 			#update requests
 			requests=list()
 			for j in range(1900):
-				if np.random.rand()<=np.random.poisson(0.1):
+				if i in users[j].online:
 					a=np.random.zipf(alpha)
 					while a>=file_num or a<0 or a in users[j].watched:
 						a=np.random.randint(2,file_num)
@@ -121,32 +149,54 @@ for n in range(x_num):
 						occupation4+=100
 
 					for k in range(1900):
-						if users[k].interaction[j] !=0:
-							if np.random.rand() <= users[k].interaction[j]:
-								if (a not in users[k].watched) and (a not in users[k].wait_watch):
-									users[k].wait_watch.add(str(a))
+						if users[j].connect[k]>10:
+							#if np.random.rand() <= users[j].interaction[k][int(i/24)]:
+							users[k].wait_watch.add(str(a))
 
 			#score
 			for e in requests:
 				files[e.name].count+=1
 				files[e.name].realcount+=1
-				files[e.name].score+=social_factor[e.source]
-
+				files[e.name].score+=users[e.source].social_factor
+			print(len(requests))
 			#wait_watch and spread
-			for j in range(1900):
-				num=len(users[j].wait_watch)
-				#print(num)
-				if num>0:
-					dice = np.random.poisson(3)
-					for e in range(num):
-						try:
-							a = int(users[j].wait_watch.pop())
-							requests.append(request(a,j))
-							users[j].iswatching=True
-							users[j].watched.add(a)
+			while 1:
+				star=len(requests)
+				for j in range(1900):
+					num=len(users[j].wait_watch)
+					#print(num)
+					if num>0:
+						for e in range(num):
+							try:
+								a = int(users[j].wait_watch.pop())
+								requests.append(request(a,j))
+								users[j].iswatching=True
+								users[j].watched.add(a)
+								for k in range(1900):
+									if users[j].connect[k]>10:
+										if np.random.rand() <= users[j].interaction[k][int(i/24)]:
+											users[k].wait_buf.add(str(a))
+							except:
+								break
+				
+				for j in range(1900):
+					num=len(users[j].wait_buf)
+					if num>0:
+						for e in range(num):
+							try:
+								a = int(users[j].wait_buf.pop())
+								requests.append(request(a,j))
+								users[j].iswatching=True
+								users[j].watched.add(a)
+							except:
+								break
 
-						except:
-							break
+				if len(requests)-star==0:
+					break
+
+			r_num=len(requests)
+			print(r_num)
+			print(i)
 
 			for e in requests:
 				files[e.name].realcount+=1
@@ -165,12 +215,6 @@ for n in range(x_num):
 							occupation += 40
 				else:
 					break
-			'''for e in files:
-				if occupation5 <capacity:
-					if e.file_name not in cache_list5:
-						cache_list5.add(e.file_name)
-						occupation5 += 100
-						break'''
 
 			files.sort(key=lambda x: x.count, reverse=True)
 
@@ -186,14 +230,12 @@ for n in range(x_num):
 			print(cache_list2)
 			print(cache_list3)
 			print(cache_list4)
-			#print(cache_list5)
 
 			#evaluate
 			hit1=0
 			hit2=0
 			hit3=0
 			hit4=0
-			hit5=0
 
 			for e in requests:
 				if e.name in cache_list:
@@ -204,12 +246,7 @@ for n in range(x_num):
 					hit3+=1
 				if e.name in cache_list4:
 					hit4+=1
-				#if e.name in cache_list5:
-					#hit5+=1
-			r_num=len(requests)
-			print(r_num)
-			print(n)
-			print(w/(r_num-hit2)/1024/1024/8)
+			#print(w/(r_num-hit2)/1024/1024/8)
 			'''
 			w1=w
 			w2=w
@@ -228,7 +265,6 @@ for n in range(x_num):
 			bitrate2=math.log((hit2*2.5*1024*1024*8 + w)/r_num)
 			bitrate3=math.log((hit3*2.5*1024*1024*8 + w)/r_num)
 			bitrate4=math.log((hit4*2.5*1024*1024*8 + w)/r_num)'''
-			#bitrate5=math.log((hit5*2.5*1024*1024*8 + w)/r_num)
 			#stalling1=w1/float(w)
 			#stalling2=w2/float(w)
 			#stalling3=w3/float(w)
@@ -237,18 +273,15 @@ for n in range(x_num):
 			#print(stalling2)
 			#print(stalling3)
 			#print(stalling4)
-			#print(bitrate5)
 
 			h1.append(hit1/(r_num+1))
 			h2.append(hit2/(r_num+1))
 			h3.append(hit3/(r_num+1))
 			h4.append(hit4/(r_num+1))
-			#h5.append(hit5/(r_num+1))
 			'''h1.append(bitrate1)
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
-			#h5.append(bitrate5)
 			cache_list.clear()
 			cache_list2.clear()
 
@@ -260,16 +293,10 @@ for n in range(x_num):
 
 			files.sort(key=lambda x: x.score, reverse=False)
 
-			if capacity!=0:
+			if capacity!=0 and len(cache_list3)>0:
 				cache_list3.pop()
 				occupation3-=100
 			files.sort(key=lambda x: x.realcount, reverse=False)
-			for e in files:
-				if e.file_name in cache_list4:
-					cache_list4.remove(e.file_name)
-					occupation4-=100
-					break
-
 			for e in files:
 				if e.file_name in cache_list4:
 					cache_list4.remove(e.file_name)
@@ -308,5 +335,4 @@ plt.plot(x,n4,"y",label='LFU')
 plt.xlabel("cache size")
 plt.ylabel("hit rate")
 plt.legend()
-#plt.plot(x,n5,"m")
 plt.show()
