@@ -58,7 +58,7 @@ def init():
 					if index==24:
 						y.append(sum(buf))
 						index=0
-						buf.clear()
+						buf=[]
 					index+=1
 
 				m=max(y)
@@ -67,7 +67,7 @@ def init():
 					y[k]*=2
 					y[k]/=m
 				users[i].interaction[j]=y
-				model = ARIMA(y, order=(1,0,0))
+				model = ARIMA(y, order=(7,0,0))
 				users[i].model[j] = model.fit(disp=0)
 
 w=500*1024*1024*8
@@ -118,7 +118,6 @@ for n in range(x_num):
 					if users[a].connect[b]>10:
 						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
 				users[a].social_factor=sum(users[a].edge)
-				#print(users[a].social_factor)
 			occupation=0
 			occupation2=0
 			
@@ -131,7 +130,7 @@ for n in range(x_num):
 			#update requests
 			requests=list()
 			for j in range(1900):
-				if i in users[j].online:
+				if np.random.rand() < len(users[j].online)/interval:
 					a=np.random.zipf(alpha)
 					while a>=file_num or a<0 or a in users[j].watched:
 						a=np.random.randint(2,file_num)
@@ -194,10 +193,6 @@ for n in range(x_num):
 				if len(requests)-star==0:
 					break
 
-			r_num=len(requests)
-			print(r_num)
-			print(i)
-
 			for e in requests:
 				files[e.name].realcount+=1
 
@@ -246,6 +241,11 @@ for n in range(x_num):
 					hit3+=1
 				if e.name in cache_list4:
 					hit4+=1
+
+			r_num=len(requests)
+			print(r_num)
+			print(i)
+
 			#print(w/(r_num-hit2)/1024/1024/8)
 			'''
 			w1=w
@@ -274,18 +274,18 @@ for n in range(x_num):
 			#print(stalling3)
 			#print(stalling4)
 
-			h1.append(hit1/(r_num+1))
-			h2.append(hit2/(r_num+1))
-			h3.append(hit3/(r_num+1))
-			h4.append(hit4/(r_num+1))
+			h1.append(float(hit1)/(r_num+1))
+			h2.append(float(hit2)/(r_num+1))
+			h3.append(float(hit3)/(r_num+1))
+			h4.append(float(hit4)/(r_num+1))
 			'''h1.append(bitrate1)
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
-			cache_list.clear()
-			cache_list2.clear()
+			cache_list1=set()
+			cache_list2=set()
 
-			#初始化
+			#init
 			for j in range(1900):
 				users[j].iswatching=False
 				users[j].wait_watch=set()
@@ -311,11 +311,11 @@ for n in range(x_num):
 
 	capacity += 100
 	#alpha+=0.1
-	n1.append(sum(h1)/interval/times)
-	n2.append(sum(h2)/interval/times)
-	n3.append(sum(h3)/interval/times)
-	n4.append(sum(h4)/interval/times)
-	n5.append(sum(h5)/interval/times)
+	n1.append(float(sum(h1))/interval/times)
+	n2.append(float(sum(h2))/interval/times)
+	n3.append(float(sum(h3))/interval/times)
+	n4.append(float(sum(h4))/interval/times)
+	n5.append(float(sum(h5))/interval/times)
 	#time series
 	'''plt.plot(t,h1,"g")
 	plt.plot(t,h2,"b")
