@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import math
+
+people=143
+
 class request:
 	def __init__(self,name,source):
 		self.name=name
@@ -19,9 +22,9 @@ class user:
 		self.wait_watch = set()
 		self.wait_buf = set()
 		self.interaction = []
-		self.model=[0]*1900
-		self.connect = [0]*1900
-		self.edge = [0]*1900
+		self.model=[0]*people
+		self.connect = [0]*people
+		self.edge = [0]*people
 		self.social_factor=0
 		self.online=set()
 
@@ -30,23 +33,23 @@ requests=list()
 interaction=list()
 #init
 def init():
-	for i in range(1900):
+	for i in range(people):
 		users.append(user())
-		for j in range(1900):
+		for j in range(people):
 			users[i].interaction.append([])
 
-	with open('CollegeMsg.txt','r') as f:
+	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
-			timestamp=int((int(edge[i+2])-1082040961)/60/60)
+			timestamp=int((int(edge[i+2]))/60/60)
 			users[int(edge[i])].interaction[int(edge[i+1])].append(timestamp)
 			users[int(edge[i])].connect[int(edge[i+1])]+=1
 			users[int(edge[i])].online.add(int(timestamp/24))
 			i+=3
 
-	for i in range(1900):
-		for j in range(1900):
+	for i in range(people):
+		for j in range(people):
 			if users[i].connect[j]>10:
 				y=list()
 				buf=list()
@@ -67,10 +70,10 @@ def init():
 					y[k]*=2
 					y[k]/=m
 				users[i].interaction[j]=y
-				model = ARIMA(y, order=(7,0,0))
+				model = ARIMA(y, order=(2,0,0))
 				users[i].model[j] = model.fit(disp=0)
 
-w=500*1024*1024*8
+w=50*1024*1024*8
 alpha=1.2
 capacity=500
 interval=193
@@ -113,8 +116,8 @@ for n in range(x_num):
 
 		for i in range(interval):
 
-			for a in range(1900):
-				for b in range(1900):
+			for a in range(people):
+				for b in range(people):
 					if users[a].connect[b]>10:
 						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
 				users[a].social_factor=sum(users[a].edge)
@@ -129,8 +132,8 @@ for n in range(x_num):
 
 			#update requests
 			requests=list()
-			for j in range(1900):
-				if np.random.rand() < len(users[j].online)/interval:
+			for j in range(people):
+				if len(users[j].online)>30:
 					a=np.random.zipf(alpha)
 					while a>=file_num or a<0 or a in users[j].watched:
 						a=np.random.randint(2,file_num)
@@ -147,7 +150,7 @@ for n in range(x_num):
 						cache_list4.add(a)
 						occupation4+=100
 
-					for k in range(1900):
+					for k in range(people):
 						if users[j].connect[k]>10:
 							#if np.random.rand() <= users[j].interaction[k][int(i/24)]:
 							users[k].wait_watch.add(str(a))
@@ -161,7 +164,7 @@ for n in range(x_num):
 			#wait_watch and spread
 			while 1:
 				star=len(requests)
-				for j in range(1900):
+				for j in range(people):
 					num=len(users[j].wait_watch)
 					#print(num)
 					if num>0:
@@ -171,14 +174,14 @@ for n in range(x_num):
 								requests.append(request(a,j))
 								users[j].iswatching=True
 								users[j].watched.add(a)
-								for k in range(1900):
+								for k in range(people):
 									if users[j].connect[k]>10:
 										if np.random.rand() <= users[j].interaction[k][int(i/24)]:
 											users[k].wait_buf.add(str(a))
 							except:
 								break
 				
-				for j in range(1900):
+				for j in range(people):
 					num=len(users[j].wait_buf)
 					if num>0:
 						for e in range(num):
@@ -201,13 +204,15 @@ for n in range(x_num):
 			for e in files:
 				if occupation <capacity:
 					if e.file_name not in cache_list:
+						cache_list.add(e.file_name)
+						occupation+=100
 
-						if e.realcount*2.5>(150):
+						'''if e.realcount*2.5>(150):
 							cache_list.add(e.file_name)
 							occupation += 100
 						else:
 							cache_list.add(e.file_name)
-							occupation += 40
+							occupation += 40'''
 				else:
 					break
 
@@ -282,11 +287,11 @@ for n in range(x_num):
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
-			cache_list1=set()
+			cache_list=set()
 			cache_list2=set()
 
 			#init
-			for j in range(1900):
+			for j in range(people):
 				users[j].iswatching=False
 				users[j].wait_watch=set()
 				users[j].watched=set()
