@@ -1,10 +1,17 @@
 from statsmodels.tsa.arima_model import ARIMA
 import matplotlib.pyplot as plt
-import os
 import numpy as np
 import math
+import os
 
-people=143
+w=50*1024*1024*8
+alpha=1.2
+capacity=500
+interval=193
+times=1
+x_num=2
+file_num=400
+people=146
 
 class request:
 	def __init__(self,name,source):
@@ -28,6 +35,9 @@ class user:
 		self.social_factor=0
 		self.online=set()
 
+
+graph=dict()
+table=list()
 users=list()
 requests=list()
 interaction=list()
@@ -35,13 +45,16 @@ interaction=list()
 def init():
 	for i in range(people):
 		users.append(user())
+		table.append([])
 		for j in range(people):
 			users[i].interaction.append([])
+			table[i].append([])
 
 	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
+			#hour
 			timestamp=int((int(edge[i+2]))/60/60)
 			users[int(edge[i])].interaction[int(edge[i+1])].append(timestamp)
 			users[int(edge[i])].connect[int(edge[i+1])]+=1
@@ -54,7 +67,7 @@ def init():
 				y=list()
 				buf=list()
 				index=0
-				for k in range(4632):
+				for k in range(12583):
 					if k in users[i].interaction[j]:
 						buf.append(1)
 
@@ -69,17 +82,30 @@ def init():
 				for k in range(len(y)):
 					y[k]*=2
 					y[k]/=m
+				#Ci,j(day)
 				users[i].interaction[j]=y
-				model = ARIMA(y, order=(2,0,0))
+				model = ARIMA(y, order=(3,0,0))
 				users[i].model[j] = model.fit(disp=0)
 
-w=50*1024*1024*8
-alpha=1.2
-capacity=500
-interval=193
-times=1
-x_num=2
-file_num=400
+def possible(source , destination):
+
+	result=list()
+
+	def BFS(source , destination , path):
+		if len(path)>3:
+			return
+		if destination in graph[source]:
+			path.append(destination)
+			result.append(path)
+			return 
+
+		else:
+			for e in graph[source]:
+				if e not in path:
+					BFS(e , destination ,path + [e])
+	BFS(source , destination , [source])
+	return result
+
 #our
 cache_list=set()
 #most popular
@@ -120,7 +146,20 @@ for n in range(x_num):
 				for b in range(people):
 					if users[a].connect[b]>10:
 						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
-				users[a].social_factor=sum(users[a].edge)
+				book=dict()
+				for b in range(people):
+					if users[a].edge[b]>0:
+						book[b]=users[a].edge[b]
+				graph[a]=book
+			#print(graph)
+			if i==0:
+				for a in range(people):
+					for b in range(people):
+						if a!=b:
+							table[a][b]=possible(a,b)
+				print(table)
+
+				#users[a].social_factor=sum(users[a].edge)
 			occupation=0
 			occupation2=0
 			
@@ -159,7 +198,21 @@ for n in range(x_num):
 			for e in requests:
 				files[e.name].count+=1
 				files[e.name].realcount+=1
-				files[e.name].score+=users[e.source].social_factor
+
+				for i in range(people):
+					if table[e.name][i]!=0 and e.name!=i:
+						p_know=list()
+						for e in table[e.name][i]:
+							multip=1
+							for index in range(1,len(e)):
+								multip*=graph[index-1][index]
+							p_know.append(1-multip)
+						donknow=1
+						for e in p_know:
+							donknow*=e
+						print((1-donknow))
+						files[e.name].score+=(1-donknow)
+			
 			print(len(requests))
 			#wait_watch and spread
 			while 1:
