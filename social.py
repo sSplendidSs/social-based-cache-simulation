@@ -151,13 +151,11 @@ for n in range(x_num):
 					if users[a].edge[b]>0:
 						book[b]=users[a].edge[b]
 				graph[a]=book
-			#print(graph)
-			if i==0:
-				for a in range(people):
-					for b in range(people):
-						if a!=b:
-							table[a][b]=possible(a,b)
-				print(table)
+
+			for a in range(people):
+				for b in range(people):
+					if a!=b:
+						table[a][b]=possible(a,b)
 
 				#users[a].social_factor=sum(users[a].edge)
 			occupation=0
@@ -200,16 +198,18 @@ for n in range(x_num):
 				files[e.name].realcount+=1
 
 				for i in range(people):
-					if table[e.name][i]!=0 and e.name!=i:
+					if len(table[e.source][i])>0 and e.source!=i:
 						p_know=list()
-						for e in table[e.name][i]:
+						for d in table[e.source][i]:
 							multip=1
-							for index in range(1,len(e)):
-								multip*=graph[index-1][index]
+							for index in range(1,len(d)):
+								#print(graph)
+								#print(index-1)
+								multip*=graph[d[index-1]][d[index]]
 							p_know.append(1-multip)
 						donknow=1
-						for e in p_know:
-							donknow*=e
+						for d in p_know:
+							donknow*=d
 						print((1-donknow))
 						files[e.name].score+=(1-donknow)
 			
