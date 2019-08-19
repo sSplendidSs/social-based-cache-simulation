@@ -92,7 +92,7 @@ def possible(source , destination):
 	result=list()
 
 	def BFS(source , destination , path):
-		if len(path)>3:
+		if len(path)>7:
 			return
 		if destination in graph[source]:
 			path.append(destination)
@@ -106,10 +106,6 @@ def possible(source , destination):
 	BFS(source , destination , [source])
 	return result
 
-#our
-cache_list=set()
-#most popular
-cache_list2=set()
 n1=list()
 n2=list()
 n3=list()
@@ -130,9 +126,14 @@ for n in range(x_num):
 	h3=list()
 	h4=list()
 	h5=list()
+	occupation=0
 	occupation3=0
 	occupation4=0
 	occupation5=0
+	#our
+	cache_list=dict()
+	#most popular
+	cache_list2=set()
 	#random
 	cache_list3=set()
 	#LFU
@@ -158,7 +159,6 @@ for n in range(x_num):
 						table[a][b]=possible(a,b)
 
 				#users[a].social_factor=sum(users[a].edge)
-			occupation=0
 			occupation2=0
 			
 			#creat files
@@ -167,16 +167,32 @@ for n in range(x_num):
 				new_file=file(j)
 				files.append(new_file)
 
-			#update requests
+
 			requests=list()
+			if i!=1:
+				#wait_watch and spread
+				for j in range(people):
+					num=len(users[j].wait_watch)
+					if num>0:
+						for e in range(num):
+							try:
+								a = int(users[j].wait_watch.pop())
+								requests.append(request(a,j))
+								users[j].watched.add(a)
+								for k in range(people):
+									if users[j].connect[k]>20:
+										users[k].wait_buf.add(str(a))
+							except:
+								break
+
+			#update requests
 			for j in range(people):
-				if len(users[j].online)>30:
+				if len(users[j].online)>50:
 					a=np.random.zipf(alpha)
 					while a>=file_num or a<0 or a in users[j].watched:
-						a=np.random.randint(2,file_num)
+						a=np.random.randint(50,file_num)
 
 					requests.append(request(a,j))
-					users[j].iswatching=True
 					users[j].watched.add(a)
 
 					if occupation3<capacity and (str(a) not in cache_list3):
@@ -188,9 +204,11 @@ for n in range(x_num):
 						occupation4+=100
 
 					for k in range(people):
-						if users[j].connect[k]>10:
+						if users[j].connect[k]>20:
 							#if np.random.rand() <= users[j].interaction[k][int(i/24)]:
 							users[k].wait_watch.add(str(a))
+
+			print(len(requests))
 
 			#score
 			for e in requests:
@@ -203,8 +221,6 @@ for n in range(x_num):
 						for d in table[e.source][i]:
 							multip=1
 							for index in range(1,len(d)):
-								#print(graph)
-								#print(index-1)
 								multip*=graph[d[index-1]][d[index]]
 							p_know.append(1-multip)
 						donknow=1
@@ -212,52 +228,19 @@ for n in range(x_num):
 							donknow*=d
 						print((1-donknow))
 						files[e.name].score+=(1-donknow)
-			
-			print(len(requests))
-			#wait_watch and spread
-			while 1:
-				star=len(requests)
-				for j in range(people):
-					num=len(users[j].wait_watch)
-					#print(num)
-					if num>0:
-						for e in range(num):
-							try:
-								a = int(users[j].wait_watch.pop())
-								requests.append(request(a,j))
-								users[j].iswatching=True
-								users[j].watched.add(a)
-								for k in range(people):
-									if users[j].connect[k]>10:
-										if np.random.rand() <= users[j].interaction[k][int(i/24)]:
-											users[k].wait_buf.add(str(a))
-							except:
-								break
-				
-				for j in range(people):
-					num=len(users[j].wait_buf)
-					if num>0:
-						for e in range(num):
-							try:
-								a = int(users[j].wait_buf.pop())
-								requests.append(request(a,j))
-								users[j].iswatching=True
-								users[j].watched.add(a)
-							except:
-								break
 
-				if len(requests)-star==0:
-					break
-
-			for e in requests:
-				files[e.name].realcount+=1
+			for a,b in cache_list.items():
+				cache_list[a]-=1
+				if b==0:
+					cache_list.pop(a) 
 
 			#determine cache
 			files.sort(key=lambda x: x.score, reverse=True)
+			i=0
 			for e in files:
 				if occupation <capacity:
 					if e.file_name not in cache_list:
-						cache_list.add(e.file_name)
+						cache_list[e.file_name]=5-i
 						occupation+=100
 
 						'''if e.realcount*2.5>(150):
@@ -266,6 +249,7 @@ for n in range(x_num):
 						else:
 							cache_list.add(e.file_name)
 							occupation += 40'''
+					i+=1
 				else:
 					break
 
@@ -340,13 +324,10 @@ for n in range(x_num):
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
-			cache_list=set()
 			cache_list2=set()
 
 			#init
 			for j in range(people):
-				users[j].iswatching=False
-				users[j].wait_watch=set()
 				users[j].watched=set()
 
 			files.sort(key=lambda x: x.score, reverse=False)
@@ -375,14 +356,14 @@ for n in range(x_num):
 	n4.append(float(sum(h4))/interval/times)
 	n5.append(float(sum(h5))/interval/times)
 	#time series
-	'''plt.plot(t,h1,"g")
+	plt.plot(t,h1,"g")
 	plt.plot(t,h2,"b")
 	plt.plot(t,h3,"r")
 	plt.plot(t,h4,"y")
 	plt.xlabel("time")
-	plt.ylabel("QoE")
-	plt.legend()'''
-plt.plot(x,n1,"go",)
+	plt.ylabel("hitrate")
+	plt.legend()
+'''plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
 plt.plot(x,n3,"ro",)
 plt.plot(x,n4,"yo",)
@@ -392,5 +373,5 @@ plt.plot(x,n3,"r",label='random')
 plt.plot(x,n4,"y",label='LFU')
 plt.xlabel("cache size")
 plt.ylabel("hit rate")
-plt.legend()
+plt.legend()'''
 plt.show()
