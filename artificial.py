@@ -7,11 +7,11 @@ import os
 w=50*1024*1024*8
 alpha=1.2
 capacity=500
-interval=10
+interval=30
 times=1
 x_num=1
-file_num=20000
-people=146
+file_num=1000
+people=143
 
 class request:
 	def __init__(self,name,source):
@@ -22,7 +22,6 @@ class file:
 		self.file_name = file_name
 		self.count = 0
 		self.score = 0
-		self.realcount = 0
 class user:
 	def __init__(self):
 		self.watched = set()
@@ -33,14 +32,11 @@ class user:
 		self.connect = [0]*people
 		self.edge = [0]*people
 		self.social_factor=0
-		self.online=set()
 
 
 graph=dict()
 table=list()
 users=list()
-requests=list()
-interaction=list()
 #init
 def init():
 	for i in range(people):
@@ -50,49 +46,19 @@ def init():
 			users[i].interaction.append([])
 			table[i].append([])
 
-	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
-		edge=f.read().split()
-		i=0
-		while i+1<len(edge):
-			#hour
-			timestamp=int((int(edge[i+2]))/60/60)
-			users[int(edge[i])].interaction[int(edge[i+1])].append(timestamp)
-			users[int(edge[i])].connect[int(edge[i+1])]+=1
-			users[int(edge[i])].online.add(int(timestamp/24))
-			i+=3
-
 	for i in range(people):
-		for j in range(people):
-			if users[i].connect[j]>10:
-				y=list()
-				buf=list()
-				index=0
-				for k in range(12583):
-					if k in users[i].interaction[j]:
-						buf.append(1)
+		N_inte=np.random.randint(0,people,np.random.poisson(7))
+		for e in N_inte:
+			if e!=i:
+				users[i].connect[e]=np.random.poisson(0.4)
 
-					if index==24:
-						y.append(sum(buf))
-						index=0
-						buf=[]
-					index+=1
-
-				m=max(y)
-				print(i,j)
-				for k in range(len(y)):
-					y[k]*=2
-					y[k]/=m
-				#Ci,j(day)
-				users[i].interaction[j]=y
-				model = ARIMA(y, order=(1,0,0))
-				users[i].model[j] = model.fit(disp=0)
 
 def possible(source , destination):
 
 	result=list()
 
 	def BFS(source , destination , path):
-		if len(path)>3:
+		if len(path)>5:
 			return
 		if destination in graph[source]:
 			path.append(destination)
@@ -106,20 +72,12 @@ def possible(source , destination):
 	BFS(source , destination , [source])
 	return result
 
-#our
-cache_list=set()
-#most popular
-cache_list2=set()
 n1=list()
 n2=list()
 n3=list()
 n4=list()
 n5=list()
 t=range(interval)
-'''x=list()
-for i in range(x_num):
-	x.append(1.2+i*0.1)
-'''
 x=range(x_num)
 init()
 
@@ -129,23 +87,33 @@ for n in range(x_num):
 	h3=list()
 	h4=list()
 	h5=list()
+	occupation=0
 	occupation3=0
 	occupation4=0
 	occupation5=0
+	#our
+	#cache_list=dict()
+	cache_list=set()	
+	#most popular
+	cache_list2=set()
 	#random
 	cache_list3=set()
 	#LFU
 	cache_list4=set()
-
+	real=list()
+	for name in range(file_num):
+		new_file=file(name)
+		real.append(new_file)
+	
 	for u in range(times):
 
 		for i in range(interval):
 
 			for a in range(people):
 				for b in range(people):
-					if users[a].connect[b]>10:
-						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
-				'''book=dict()
+					if users[a].connect[b]>0:
+						users[a].edge[b]=users[a].connect[b]+np.random.normal(0,0)
+				book=dict()
 				for b in range(people):
 					if users[a].edge[b]>0:
 						book[b]=users[a].edge[b]
@@ -154,28 +122,29 @@ for n in range(x_num):
 			for a in range(people):
 				for b in range(people):
 					if a!=b:
-						table[a][b]=possible(a,b)'''
-
-				users[a].social_factor=sum(users[a].edge)
-			occupation=0
-			occupation2=0
+						table[a][b]=possible(a,b)
+				#users[a].social_factor=sum(users[a].edge)
 			
 			#creat files
 			files=list()
-			for j in range(1,file_num+1):
-				new_file=file(j)
+			for name in range(file_num):
+				new_file=file(name)
 				files.append(new_file)
 
+			occupation2=0	
+			occupation=0					
+
+			requests=[]
+			cache_list=set()
+			cache_list2=set()
 			#update requests
-			requests=list()
 			for j in range(people):
-				if len(users[j].online)>0:
+				if np.random.rand()<np.random.poisson(0.2):
 					a=np.random.zipf(alpha)
-					while a>=file_num or a<0:
+					while a>=file_num or a<=0 or a in users[j].watched:
 						a=np.random.randint(100,file_num)
 
 					requests.append(request(a,j))
-					users[j].iswatching=True
 					users[j].watched.add(a)
 
 					if occupation3<capacity and (str(a) not in cache_list3):
@@ -187,16 +156,14 @@ for n in range(x_num):
 						occupation4+=100
 
 					for k in range(people):
-						if users[j].connect[k]>20:
-							#if np.random.rand() <= users[j].interaction[k][int(i/24)]:
+						if np.random.rand()<=users[j].connect[k]:
 							users[k].wait_watch.add(str(a))
 
 			#score
 			for e in requests:
 				files[e.name].count+=1
-				files[e.name].realcount+=1
-				files[e.name].score+=users[e.source].social_factor
-				'''for i in range(people):
+				real[e.name].count+=1
+				for i in range(people):
 					if len(table[e.source][i])>0 and e.source!=i:
 						p_know=list()
 						for d in table[e.source][i]:
@@ -207,41 +174,30 @@ for n in range(x_num):
 						donknow=1
 						for d in p_know:
 							donknow*=d
-						files[e.name].score+=(1-donknow)'''
-			
-			print(len(requests))
-			#wait_watch and spread
-
-			for j in range(people):
-				num=len(users[j].wait_watch)
-				if num>0:
-					for e in range(num):
-						try:
-							a = int(users[j].wait_watch.pop())
-							requests.append(request(a,j))
-							users[j].iswatching=True
-							users[j].watched.add(a)
-						except:
-							break
+						files[e.name].score+=(1-donknow)
 				
-
-			for e in requests:
-				files[e.name].realcount+=1
-				files[e.name].score+=users[e.source].social_factor
+			'''for a,b in cache_list.items():
+				cache_list[a]-=1
+				if b<=0:
+					cache_list.pop(a) 
+					occupation-=40'''
 
 			#determine cache
 			files.sort(key=lambda x: x.score, reverse=True)
+			i=0
 			for e in files:
 				if occupation <capacity:
 					if e.file_name not in cache_list:
 						cache_list.add(e.file_name)
-						occupation+=30
+						#cache_list[e.file_name]=0
+						occupation+=100
+					i+=1
 				else:
 					break
+			buf=sorted(real, key=lambda x: x.count, reverse=True)
 
-			files.sort(key=lambda x: x.count, reverse=True)
-
-			for e in files:
+			for e in buf:
+				
 				if occupation2 <capacity:
 					if e.file_name not in cache_list2:
 						cache_list2.add(e.file_name)
@@ -253,6 +209,24 @@ for n in range(x_num):
 			print(cache_list2)
 			print(cache_list3)
 			print(cache_list4)
+
+			requests=[]
+			#wait_watch and spread
+			for j in range(people):
+				num=len(users[j].wait_watch)
+				if num>0:
+					for e in range(num):
+						try:
+							a = int(users[j].wait_watch.pop())
+							requests.append(request(a,j))
+							users[j].watched.add(a)
+						except:
+							break
+
+			for e in requests:
+				real[e.name].count+=1
+
+			print(len(requests))
 
 			#evaluate
 			hit1=0
@@ -270,8 +244,6 @@ for n in range(x_num):
 				if e.name in cache_list4:
 					hit4+=1
 
-			r_num=len(requests)
-			print(r_num)
 			print(i)
 
 			#print(w/(r_num-hit2)/1024/1024/8)
@@ -301,44 +273,34 @@ for n in range(x_num):
 			#print(stalling3)
 			#print(stalling4)
 
-			h1.append(float(hit1)/(r_num+1))
-			h2.append(float(hit2)/(r_num+1))
-			h3.append(float(hit3)/(r_num+1))
-			h4.append(float(hit4)/(r_num+1))
+			h1.append(float(hit1)/(len(requests)))
+			h2.append(float(hit2)/(len(requests)))
+			h3.append(float(hit3)/(len(requests)))
+			h4.append(float(hit4)/(len(requests)))
 			'''h1.append(bitrate1)
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
-			cache_list=set()
-			cache_list2=set()
 
 			#init
 			for j in range(people):
-				users[j].iswatching=False
-				users[j].wait_watch=set()
 				users[j].watched=set()
 
-			files.sort(key=lambda x: x.score, reverse=False)
+			files.sort(key=lambda x: x.count, reverse=False)
 
 			if capacity!=0 and len(cache_list3)>0:
 				cache_list3.pop()
 				occupation3-=100
-			files.sort(key=lambda x: x.realcount, reverse=False)
+			
 			for e in files:
 				if e.file_name in cache_list4:
 					cache_list4.remove(e.file_name)
 					occupation4-=100
 					break
 
-			for e in files:
-				if e.file_name in cache_list4:
-					cache_list4.remove(e.file_name)
-					occupation4-=100
-					break
-
-	#capacity += 100
+	'''capacity += 100
 	#alpha+=0.1
-	'''n1.append(float(sum(h1))/interval/times)
+	n1.append(float(sum(h1))/interval/times)
 	n2.append(float(sum(h2))/interval/times)
 	n3.append(float(sum(h3))/interval/times)
 	n4.append(float(sum(h4))/interval/times)
