@@ -10,7 +10,7 @@ capacity=500
 interval=30
 times=1
 x_num=1
-file_num=1000
+file_num=100000
 people=143
 
 class request:
@@ -31,7 +31,7 @@ class user:
 		self.model=[0]*people
 		self.connect = [0]*people
 		self.edge = [0]*people
-		self.social_factor=0
+		self.bandwidth=np.random.normal(2.5,0.5)
 
 
 graph=dict()
@@ -58,7 +58,7 @@ def possible(source , destination):
 	result=list()
 
 	def BFS(source , destination , path):
-		if len(path)>5:
+		if len(path)>3:
 			return
 		if destination in graph[source]:
 			path.append(destination)
@@ -109,22 +109,23 @@ for n in range(x_num):
 
 		for i in range(interval):
 
-			for a in range(people):
-				for b in range(people):
-					if users[a].connect[b]>0:
-						users[a].edge[b]=users[a].connect[b]+np.random.normal(0,0)
-				book=dict()
-				for b in range(people):
-					if users[a].edge[b]>0:
-						book[b]=users[a].edge[b]
-				graph[a]=book
+			def update_graph_route():
+				for a in range(people):
+					for b in range(people):
+						if users[a].connect[b]>0:
+							users[a].edge[b]=users[a].connect[b]+np.random.normal(0,0)
+					book=dict()
+					for b in range(people):
+						if users[a].edge[b]>0:
+							book[b]=users[a].edge[b]
+					graph[a]=book
 
-			for a in range(people):
-				for b in range(people):
-					if a!=b:
-						table[a][b]=possible(a,b)
-				#users[a].social_factor=sum(users[a].edge)
-			
+				for a in range(people):
+					for b in range(people):
+						if a!=b:
+							table[a][b]=possible(a,b)
+			update_graph_route()
+
 			#creat files
 			files=list()
 			for name in range(file_num):
@@ -137,91 +138,107 @@ for n in range(x_num):
 			requests=[]
 			cache_list=set()
 			cache_list2=set()
-			#update requests
-			for j in range(people):
-				if np.random.rand()<np.random.poisson(0.2):
-					a=np.random.zipf(alpha)
-					while a>=file_num or a<=0 or a in users[j].watched:
-						a=np.random.randint(100,file_num)
+			
+			def self_watch():
+				global occupation3
+				global occupation4
+				for j in range(people):
+					if np.random.rand()<np.random.poisson(0.2):
+						#a=np.random.zipf(alpha)
+						a=np.random.randint(1,file_num)
+						while a>=file_num or a<=0 or a in users[j].watched:
+							a=np.random.randint(1,file_num)
 
-					requests.append(request(a,j))
-					users[j].watched.add(a)
+						requests.append(request(a,j))
+						users[j].watched.add(a)
 
-					if occupation3<capacity and (str(a) not in cache_list3):
-						cache_list3.add(str(a))
-						occupation3+=100
+						if occupation3<capacity and (str(a) not in cache_list3):
+							cache_list3.add(str(a))
+							occupation3+=100
 
-					if occupation4<capacity and (a not in cache_list4):
-						cache_list4.add(a)
-						occupation4+=100
+						if occupation4<capacity and (a not in cache_list4):
+							cache_list4.add(a)
+							occupation4+=100
 
-					for k in range(people):
-						if np.random.rand()<=users[j].connect[k]:
-							users[k].wait_watch.add(str(a))
+						for k in range(people):
+							if np.random.rand()<=users[j].connect[k] and a not in users[k].watched:
+								users[k].wait_watch.add(str(a))
+			self_watch()
 
-			#score
-			for e in requests:
-				files[e.name].count+=1
-				real[e.name].count+=1
-				for i in range(people):
-					if len(table[e.source][i])>0 and e.source!=i:
-						p_know=list()
-						for d in table[e.source][i]:
-							multip=1
-							for index in range(1,len(d)):
-								multip*=graph[d[index-1]][d[index]]
-							p_know.append(1-multip)
-						donknow=1
-						for d in p_know:
-							donknow*=d
-						files[e.name].score+=(1-donknow)
-				
-			'''for a,b in cache_list.items():
-				cache_list[a]-=1
-				if b<=0:
-					cache_list.pop(a) 
-					occupation-=40'''
+			def update_cache(occupation,occupation2):
+				#score
+				for e in requests:
+					files[e.name].count+=1
+					real[e.name].count+=1
+					for i in range(people):
+						if len(table[e.source][i])>0 and e.source!=i:
+							p_know=list()
+							for d in table[e.source][i]:
+								multip=1
+								for index in range(1,len(d)):
+									multip*=graph[d[index-1]][d[index]]
+								p_know.append(1-multip)
+							donknow=1
+							for d in p_know:
+								donknow*=d
+							files[e.name].score+=(1-donknow)
+					
+				'''for a,b in cache_list.items():
+					cache_list[a]-=1
+					if b<=0:
+						cache_list.pop(a) 
+						occupation-=40'''
 
-			#determine cache
-			files.sort(key=lambda x: x.score, reverse=True)
-			i=0
-			for e in files:
-				if occupation <capacity:
-					if e.file_name not in cache_list:
-						cache_list.add(e.file_name)
-						#cache_list[e.file_name]=0
-						occupation+=100
-					i+=1
-				else:
-					break
-			buf=sorted(real, key=lambda x: x.count, reverse=True)
+				#determine cache
+				files.sort(key=lambda x: x.score, reverse=True)
+				i=0
+				for e in files:
+					if occupation <capacity:
+						if e.file_name not in cache_list:
+							cache_list.add(e.file_name)
+							#cache_list[e.file_name]=0
+							occupation+=100
+						i+=1
+					else:
+						break
+				buf=sorted(real, key=lambda x: x.count, reverse=True)
 
-			for e in buf:
-				
-				if occupation2 <capacity:
-					if e.file_name not in cache_list2:
-						cache_list2.add(e.file_name)
-						occupation2 += 100
-				else:
-					break
+				for e in buf:
+					
+					if occupation2 <capacity:
+						if e.file_name not in cache_list2:
+							cache_list2.add(e.file_name)
+							occupation2 += 100
+					else:
+						break
 
-			print(cache_list)
-			print(cache_list2)
-			print(cache_list3)
-			print(cache_list4)
+				print(cache_list)
+				print(cache_list2)
+				print(cache_list3)
+				print(cache_list4)
+			update_cache(occupation,occupation2)
 
 			requests=[]
-			#wait_watch and spread
-			for j in range(people):
-				num=len(users[j].wait_watch)
-				if num>0:
-					for e in range(num):
-						try:
-							a = int(users[j].wait_watch.pop())
-							requests.append(request(a,j))
-							users[j].watched.add(a)
-						except:
-							break
+			def share():
+				for j in range(people):
+					users[j].wait_watch=users[j].wait_watch|users[j].wait_buf
+					users[j].wait_buf=set()
+				#wait_watch and spread
+				for j in range(people):
+					num=len(users[j].wait_watch)
+					print(num)
+					if num>0:
+						for e in range(num):
+							try:
+								a = int(users[j].wait_watch.pop())
+								requests.append(request(a,j))
+								users[j].watched.add(a)
+								for k in range(people):
+									if np.random.rand()<=users[j].connect[k] and a not in users[k].watched:
+										users[k].wait_buf.add(str(a))
+							except:
+								break
+			share()
 
 			for e in requests:
 				real[e.name].count+=1
@@ -273,18 +290,16 @@ for n in range(x_num):
 			#print(stalling3)
 			#print(stalling4)
 
-			h1.append(float(hit1)/(len(requests)))
-			h2.append(float(hit2)/(len(requests)))
-			h3.append(float(hit3)/(len(requests)))
-			h4.append(float(hit4)/(len(requests)))
+			h1.append(float(hit1)/(len(requests)+1))
+			h2.append(float(hit2)/(len(requests)+1))
+			h3.append(float(hit3)/(len(requests)+1))
+			h4.append(float(hit4)/(len(requests)+1))
 			'''h1.append(bitrate1)
 			h2.append(bitrate2)
 			h3.append(bitrate3)
 			h4.append(bitrate4)'''
 
 			#init
-			for j in range(people):
-				users[j].watched=set()
 
 			files.sort(key=lambda x: x.count, reverse=False)
 
