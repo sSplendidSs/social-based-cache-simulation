@@ -1,4 +1,4 @@
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima_model import ARMA
 #from sklearn.preprocessing import scale
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,9 +11,10 @@ alpha=1.2
 capacity=5000
 interval=200
 times=1
-x_num=10000
+x_num=1
 file_num=10000
-people=90
+people=146
+day=527
 Cbuf=2
 qa=0.5
 qb=0.5
@@ -33,6 +34,7 @@ class user:
 		self.watched = set()
 		self.wait_watch = set()
 		self.wait_buf = set()
+		self.Iij=[]
 		self.interaction = []
 		self.model=[0]*people
 		self.connect = [0]*people
@@ -49,47 +51,53 @@ def init():
 		users.append(user())
 		table.append([])
 		for j in range(people):
-			users[i].interaction.append([])
+			users[i].Iij.append([])
 			table[i].append([])
-	'''
-	for i in range(people):
-		N_inte=np.random.randint(0,people,np.random.poisson(7))
-		for e in N_inte:
-			if e!=i:
-				users[i].connect[e]=np.random.poisson(0.175)'''
-	with open('email-Eu-core-temporal-Dept3.txt','r') as f:
+		for j in range(day):
+			users[i].interaction.append([])
+
+	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
-			#hour
+			#day
+			timestamp=int((int(edge[i+2]))/60/60/24)
+			users[int(edge[i])].interaction[timestamp].append(int(edge[i+1]))
 			users[int(edge[i])].connect[int(edge[i+1])]+=1
 			i+=3
-	'''
 	for i in range(people):
 		for j in range(people):
-			if users[i].connect[j]>20:
-				y=list()
-				buf=list()
-				index=0
-				for k in range(12583):
-					if k in users[i].interaction[j]:
-						buf.append(1)
+			if 	users[i].connect[j]>20:
+				users[i].Iij[j]=[0]*day
 
-					if index==24:
-						y.append(sum(buf))
-						index=0
-						buf=[]
-					index+=1
+	for i in range(people):
+		for j in range(day):
+			users[i].interaction[j].sort()
+			total=len(users[i].interaction[j])
+			index=0
+			while index<total:
+				who=users[i].interaction[j][index]
+				contact_num=users[i].interaction[j].count(who)
+				if users[i].connect[who]>20:
+					users[i].Iij[who][j]=contact_num/total
+				index+=contact_num
 
-				m=max(y)
-				print(i,j)
-				for k in range(len(y)):
-					y[k]*=2
-					y[k]/=m
-				#Ci,j(day)
-				users[i].interaction[j]=y
-				model = ARIMA(y, order=(5,0,0))
-				users[i].model[j] = model.fit(disp=0)'''
+	for i in range(people):
+		if users[72].connect[i]>20:
+			test=list()
+			for j in range(day):
+				if j<4:
+					test.append(0)
+				else:
+					try:
+						model = ARMA(users[72].Iij[i][j-4:j], order=(2,0,0))
+						model = model.fit(disp=0)
+						test.append(model.predict(start=3, end=3)[0])
+					except:
+						test.append(0)
+			plt.plot(test,'b')
+			plt.plot(users[72].Iij[i],"g")
+			plt.show()
 
 
 def possible(source , destination):
