@@ -1,5 +1,5 @@
 from statsmodels.tsa.arima_model import ARIMA
-from sklearn.preprocessing import scale
+#from sklearn.preprocessing import scale
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -7,13 +7,13 @@ import os
 
 w=50*1024*1024*8
 p=300*1024*1024*8
-alpha=1.4
-capacity=800
-interval=50
+alpha=1.2
+capacity=5000
+interval=200
 times=1
-x_num=1
-file_num=1000
-people=146
+x_num=10000
+file_num=10000
+people=90
 Cbuf=2
 qa=0.5
 qb=0.5
@@ -37,7 +37,6 @@ class user:
 		self.model=[0]*people
 		self.connect = [0]*people
 		self.edge = [0]*people
-		self.online=set()
 		self.bandwidth=np.random.normal(2.5,0.5)
 
 
@@ -58,20 +57,17 @@ def init():
 		for e in N_inte:
 			if e!=i:
 				users[i].connect[e]=np.random.poisson(0.175)'''
-	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
+	with open('email-Eu-core-temporal-Dept3.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
 			#hour
-			timestamp=int((int(edge[i+2]))/60/60)
-			users[int(edge[i])].interaction[int(edge[i+1])].append(timestamp)
 			users[int(edge[i])].connect[int(edge[i+1])]+=1
-			users[int(edge[i])].online.add(int(timestamp/24))
 			i+=3
-
+	'''
 	for i in range(people):
 		for j in range(people):
-			if users[i].connect[j]>10:
+			if users[i].connect[j]>20:
 				y=list()
 				buf=list()
 				index=0
@@ -92,8 +88,8 @@ def init():
 					y[k]/=m
 				#Ci,j(day)
 				users[i].interaction[j]=y
-				model = ARIMA(y, order=(1,0,0))
-				users[i].model[j] = model.fit(disp=0)
+				model = ARIMA(y, order=(5,0,0))
+				users[i].model[j] = model.fit(disp=0)'''
 
 
 def possible(source , destination):
@@ -101,7 +97,7 @@ def possible(source , destination):
 	result=list()
 
 	def BFS(source , destination , path):
-		if len(path)>3:
+		if len(path)>2:
 			return
 		if destination in graph[source]:
 			path.append(destination)
@@ -122,7 +118,22 @@ n4=[0]*interval
 t=range(interval)
 x=range(x_num)
 init()
+def update_graph_route():
+	for a in range(people):
+		for b in range(people):
+			if users[a].connect[b]>10:
+				users[a].edge[b]=np.random.poisson(0.3)
+			book=dict()
+			for b in range(people):
+				if users[a].edge[b]>0:
+					book[b]=users[a].edge[b]
+			graph[a]=book
 
+	for a in range(people):
+		for b in range(people):
+			if a!=b:
+				table[a][b]=possible(a,b)
+update_graph_route()
 for n in range(x_num):
 	
 	for u in range(times):
@@ -167,49 +178,37 @@ for n in range(x_num):
 			Q4=0
 			occupation=0	
 			occupation2=0
-			def update_graph_route():
-				for a in range(people):
-					'''for b in range(people):
-						if users[a].connect[b]>0:
-							users[a].edge[b]=users[a].connect[b]+np.random.normal(0,0)'''
-					for b in range(people):
-						if users[a].connect[b]>20:
-							users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]				
-						book=dict()
-						for b in range(people):
-							if users[a].edge[b]>0:
-								book[b]=users[a].edge[b]
-						graph[a]=book
 
-				for a in range(people):
-					for b in range(people):
-						if a!=b:
-							table[a][b]=possible(a,b)
 			def self_watch():
 				global occupation3
 				global occupation4
+				done4=False
 				for j in range(people):
 					if np.random.rand()<np.random.poisson(0.05):
 						a=np.random.zipf(alpha)
-						while a>=file_num or a<=0 and a not in users[j].watched:
+						while a>=file_num or a<=0:
 							a=np.random.zipf(alpha)
 							if a<100:
 								a=-1
-
 						requests.append(request(a,j))
 						users[j].watched.add(a)
 
-						if occupation3<capacity and (a not in cache_list3):
-							cache_list3.append(a)
-							occupation3+=100
-
-						if occupation4<capacity and (a not in cache_list4):
+						if occupation4<capacity and (a not in cache_list4) and not done4:
 							cache_list4.add(a)
 							occupation4+=100
+							done4=True
 
 						for k in range(people):
-							if users[j].connect[k]>20 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
-								users[k].wait_watch.add(str(a))
+							if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
+								users[k].wait_watch.add(a)
+
+				if occupation3<capacity:
+					a=np.random.zipf(alpha)
+					while a>=file_num or a<=0 or a in cache_list3:
+						a=np.random.zipf(alpha)
+					cache_list3.append(a)
+					occupation3+=100
+
 			def update_cache():
 				global occupation
 				global occupation2
@@ -243,7 +242,7 @@ for n in range(x_num):
 						if e.file_name not in cache_list:
 							cache_list.add(e.file_name)
 							#cache_list[e.file_name]=0
-							occupation+=70
+							occupation+=50
 						i+=1
 					else:
 						break
@@ -277,17 +276,17 @@ for n in range(x_num):
 									requests.append(request(a,j))
 									users[j].watched.add(a)
 								for k in range(people):
-									if users[j].connect[k]>20 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
-										users[k].wait_buf.add(str(a))
+									if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
+										users[k].wait_buf.add(a)
 							except:
 								break
 			
 			def evaluate():
 
-				w1=w
+				'''w1=w
 				w2=w
 				w3=w
-				w4=w
+				w4=w'''
 				init1=0
 				init2=0
 				init3=0
@@ -296,16 +295,22 @@ for n in range(x_num):
 				global hit2
 				global hit3
 				global hit4
-				global Q1
+				'''global Q1
 				global Q2
 				global Q3
-				global Q4
+				global Q4'''
 
 				for e in requests:
 					real[e.name].count+=1
-
-				for e in requests:
 					if e.name in cache_list:
+						hit1+=1
+					if e.name in cache_list2:
+						hit2+=1
+					if e.name in cache_list3:
+						hit3+=1
+					if e.name in cache_list4:
+						hit4+=1
+					'''if e.name in cache_list:
 						hit1+=1
 						init1+=1/10/1000
 						init1+=Cbuf/users[e.source].bandwidth
@@ -345,9 +350,9 @@ for n in range(x_num):
 						init4+=1/10/1000
 						init4+=1/70/1000
 						init4+=Cbuf/users[e.source].bandwidth
-						init4+=Cbuf/w						
+						init4+=Cbuf/w	'''					
 
-				print(w/(len(requests)+1-hit2)/1024/1024/8)
+				'''print(w/(len(requests)+1-hit2)/1024/1024/8)
 		
 				if w/(r_num-hit1)/1024/1024/8 >2.5:
 					w1=2.5
@@ -366,22 +371,19 @@ for n in range(x_num):
 				Q1=qa*bitrate1-qb*init1
 				Q2=qa*bitrate2-qb*init2
 				Q3=qa*bitrate3-qb*init3
-				Q4=qa*bitrate4-qb*init4
-			update_graph_route()
+				Q4=qa*bitrate4-qb*init4'''
 			requests=[]
 			share()
 			r_num=len(requests)
-			r_num+=1
-			print(r_num)
+			print('shared',r_num)
 			evaluate()	
 			requests=[]
 			cache_list=set()
 			cache_list2=set()
 			self_watch()
-			for e in requests:
-				real[e.name].count+=1
+			print('self',len(requests))
 			update_cache()
-			if i%2==0:
+			if i%7==0:
 				for j in range(people):
 					users[j].watched=set()
 			print(i)
@@ -395,24 +397,18 @@ for n in range(x_num):
 				h2.append(Q2)
 				h3.append(Q3)
 				h4.append(Q4)'''
+			if i>int(capacity/100):
+				if capacity!=0 and len(cache_list3)>0:
+					cache_list3.pop(np.random.randint(len(cache_list3)))
+					occupation3-=100
 
-			if capacity!=0 and len(cache_list3)>0:
-				cache_list3.pop(np.random.randint(len(cache_list3)))
-				occupation3-=100
-			if capacity!=0 and len(cache_list3)>0:
-				cache_list3.pop(np.random.randint(len(cache_list3)))
-				occupation3-=100
-			if capacity!=0 and len(cache_list3)>0:
-				cache_list3.pop(np.random.randint(len(cache_list3)))
-				occupation3-=100
-
-			buf=sorted(real,key=lambda x: x.count, reverse=False)
-			
-			for e in buf:
-				if e.file_name in cache_list4:
-					cache_list4.remove(e.file_name)
-					occupation4-=100
-					break
+				buf=sorted(real,key=lambda x: x.count, reverse=False)
+				
+				for e in buf:
+					if e.file_name in cache_list4:
+						cache_list4.remove(e.file_name)
+						occupation4-=100
+						break
 			for e in real:
 				e.score=0
 
