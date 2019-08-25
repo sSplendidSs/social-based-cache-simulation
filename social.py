@@ -145,7 +145,7 @@ for n in range(x_num):
 				for b in range(people):
 					if users[a].connect[b]>10:
 						users[a].edge[b]=users[a].model[b].predict(start=i, end=i)[0]*2
-				'''book=dict()
+				book=dict()
 				for b in range(people):
 					if users[a].edge[b]>0:
 						book[b]=users[a].edge[b]
@@ -154,7 +154,7 @@ for n in range(x_num):
 			for a in range(people):
 				for b in range(people):
 					if a!=b:
-						table[a][b]=possible(a,b)'''
+						table[a][b]=possible(a,b)
 
 				users[a].social_factor=sum(users[a].edge)
 			occupation=0
