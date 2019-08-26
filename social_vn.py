@@ -1,4 +1,4 @@
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima_model import ARMA
 #from sklearn.preprocessing import scale
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,12 +9,12 @@ w=50*1024*1024*8
 p=300*1024*1024*8
 alpha=1.2
 capacity=5000
-interval=200
 times=1
 x_num=1
-file_num=10000
+file_num=1000
 people=146
 day=527
+interval=day
 Cbuf=2
 qa=0.5
 qb=0.5
@@ -39,6 +39,7 @@ class user:
 		self.model=[0]*people
 		self.connect = [0]*people
 		self.edge = [0]*people
+		self.active=[0]*day
 		self.bandwidth=np.random.normal(2.5,0.5)
 
 
@@ -63,8 +64,57 @@ def init():
 			#day
 			timestamp=int((int(edge[i+2]))/60/60/24)
 			users[int(edge[i])].interaction[timestamp].append(int(edge[i+1]))
-			users[int(edge[i])].connect[int(edge[i+1])]+=1
+			users[int(edge[i])].connect[int(edge[i+1])]+=1	
 			i+=3
+	for i in range(people):
+		for j in range(people):
+			if 	users[i].connect[j]>1:
+				users[i].Iij[j]=[0]*day
+
+	for i in range(people):
+		for j in range(day):
+			users[i].interaction[j].sort()
+			total=len(users[i].interaction[j])
+			index=0
+			while index<total:
+				who=users[i].interaction[j][index]
+				contact_num=users[i].interaction[j].count(who)
+				if users[i].connect[who]>1:
+					users[i].Iij[who][j]=contact_num/total
+				index+=contact_num
+	
+	for d in range(day):
+		m=0
+		for i in range(people):	
+			if len(users[i].interaction[d])>m:
+				m=len(users[i].interaction[j])
+		if m==0:
+			m=1
+		for i in range(people):
+			users[i].active[d]=len(users[i].interaction[d])/m
+
+	'''for i in range(people):
+		if users[72].connect[i]>20:
+			test=list()
+			for j in range(day):
+				if j<7:
+					test.append(0)
+				else:
+					try:
+						model = ARMA(users[72].Iij[i][j-7:j], order=(5,0,0))
+						model = model.fit(disp=0)
+						out = model.forecast()[0]
+						if out>1:
+							out=1
+						if out<0:
+							out=0
+						test.append(out)
+					except:
+						test.append(0)
+			plt.plot(test,'b')
+			plt.plot(users[72].Iij[i],"g")
+			plt.show()'''
+
 
 def possible(source , destination):
 
@@ -89,25 +139,23 @@ n1=[0]*interval
 n2=[0]*interval
 n3=[0]*interval
 n4=[0]*interval
-t=range(interval)
+t=range(day)
 x=range(x_num)
 init()
-def update_graph_route():
+def update_graph_route(day):
 	for a in range(people):
 		for b in range(people):
-			if users[a].connect[b]>10:
-				users[a].edge[b]=np.random.poisson(0.3)
 			book=dict()
 			for b in range(people):
-				if users[a].edge[b]>0:
-					book[b]=users[a].edge[b]
+				if users[a].connect[b]>1:
+					if users[a].Iij[b][day]>0:
+						book[b]=users[a].Iij[b][day]
 			graph[a]=book
 
 	for a in range(people):
 		for b in range(people):
 			if a!=b:
 				table[a][b]=possible(a,b)
-update_graph_route()
 for n in range(x_num):
 	
 	for u in range(times):
@@ -141,7 +189,7 @@ for n in range(x_num):
 			new_file=file(name)
 			real.append(new_file)
 
-		for i in range(interval):
+		for i in range(day):
 			hit1=0
 			hit2=0
 			hit3=0
@@ -158,12 +206,13 @@ for n in range(x_num):
 				global occupation4
 				done4=False
 				for j in range(people):
-					if np.random.rand()<np.random.poisson(0.05):
-						a=np.random.zipf(alpha)
-						while a>=file_num or a<=0:
+					if np.random.rand()<=np.random.poisson(users[j].active[i]):
+						#a=np.random.zipf(alpha)
+						a=np.random.randint(1,file_num)
+						'''swhile a>=file_num or a<=0:
 							a=np.random.zipf(alpha)
 							if a<100:
-								a=-1
+								a=-1'''
 						requests.append(request(a,j))
 						users[j].watched.add(a)
 
@@ -173,7 +222,7 @@ for n in range(x_num):
 							done4=True
 
 						for k in range(people):
-							if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
+							if users[j].connect[k]>1 and np.random.rand()<=np.random.poisson(users[j].Iij[k][i]):
 								users[k].wait_watch.add(a)
 
 				if occupation3<capacity:
@@ -230,10 +279,10 @@ for n in range(x_num):
 					else:
 						break
 
-				print(cache_list)
+				'''print(cache_list)
 				print(cache_list2)
 				print(cache_list3)
-				print(cache_list4)
+				print(cache_list4)'''
 
 			def share():
 				for j in range(people):
@@ -246,13 +295,15 @@ for n in range(x_num):
 						for e in range(num):
 							try:
 								a = int(users[j].wait_watch.pop())
-								if a not in users[j].watched:
-									requests.append(request(a,j))
-									users[j].watched.add(a)
+								i#f a not in users[j].watched:
+								requests.append(request(a,j))
+								users[j].watched.add(a)
 								for k in range(people):
-									if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
-										users[k].wait_buf.add(a)
-							except:
+									if users[j].connect[k]>1:
+										if np.random.rand()<=np.random.poisson(users[j].Iij[k][i]):
+											users[k].wait_buf.add(a)
+							except e:
+								print(e)
 								break
 			
 			def evaluate():
@@ -346,6 +397,7 @@ for n in range(x_num):
 				Q2=qa*bitrate2-qb*init2
 				Q3=qa*bitrate3-qb*init3
 				Q4=qa*bitrate4-qb*init4'''
+			update_graph_route(i)
 			requests=[]
 			share()
 			r_num=len(requests)
@@ -357,7 +409,7 @@ for n in range(x_num):
 			self_watch()
 			print('self',len(requests))
 			update_cache()
-			if i%7==0:
+			if i%1==0:
 				for j in range(people):
 					users[j].watched=set()
 			print(i)
