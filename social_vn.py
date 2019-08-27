@@ -12,7 +12,7 @@ capacity=5000
 times=1
 x_num=1
 file_num=1000
-people=146
+people=1900
 day=527
 interval=day
 Cbuf=2
@@ -57,7 +57,7 @@ def init():
 		for j in range(day):
 			users[i].interaction.append([])
 
-	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
+	with open('CollegeMsg.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):

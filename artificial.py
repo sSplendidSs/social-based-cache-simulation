@@ -5,17 +5,19 @@ import numpy as np
 import math
 import os
 
-w=50*1024*1024*8
-p=300*1024*1024*8
+w=1
+p=75
+RTTf=10
+RTTB=70
 alpha=1.2
-capacity=5000
-interval=200
+capacity=2500
+interval=100
 times=1
-x_num=1
+x_num=10
 file_num=10000
-people=146
+people=1900+1005
 day=527
-Cbuf=2
+Cbuf=1
 qa=0.5
 qb=0.5
 qc=0.5
@@ -39,7 +41,7 @@ class user:
 		self.model=[0]*people
 		self.connect = [0]*people
 		self.edge = [0]*people
-		self.bandwidth=np.random.normal(2.5,0.5)
+		self.bandwidth=np.random.normal(3,0.5)
 
 
 graph=dict()
@@ -53,17 +55,24 @@ def init():
 		for j in range(people):
 			users[i].Iij.append([])
 			table[i].append([])
-		for j in range(day):
-			users[i].interaction.append([])
+		#for j in range(day):
+		#	users[i].interaction.append([])
 
-	with open('email-Eu-core-temporal-Dept4.txt','r') as f:
+	with open('CollegeMsg.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
 			#day
-			timestamp=int((int(edge[i+2]))/60/60/24)
-			users[int(edge[i])].interaction[timestamp].append(int(edge[i+1]))
+			#timestamp=int((int(edge[i+2]))/60/60/24)
+			#users[int(edge[i])].interaction[timestamp].append(int(edge[i+1]))
 			users[int(edge[i])].connect[int(edge[i+1])]+=1
+			i+=3
+
+	with open('email-Eu-core-temporal.txt','r') as f:
+		edge=f.read().split()
+		i=0
+		while i+1<len(edge):
+			users[int(edge[i])+1900].connect[int(edge[i+1])+1900]+=1
 			i+=3
 
 def possible(source , destination):
@@ -230,10 +239,10 @@ for n in range(x_num):
 					else:
 						break
 
-				print(cache_list)
+				'''print(cache_list)
 				print(cache_list2)
 				print(cache_list3)
-				print(cache_list4)
+				print(cache_list4)'''
 
 			def share():
 				for j in range(people):
@@ -257,95 +266,85 @@ for n in range(x_num):
 			
 			def evaluate():
 
-				'''w1=w
-				w2=w
-				w3=w
-				w4=w'''
-				init1=0
-				init2=0
-				init3=0
-				init4=0
+				Q1=[0]*3
+				Q2=[0]*3
+				Q3=[0]*3
+				Q4=[0]*3
+
 				global hit1
 				global hit2
 				global hit3
 				global hit4
-				'''global Q1
-				global Q2
-				global Q3
-				global Q4'''
+				global QoE1
+				global QoE2
+				global QoE3
+				global QoE4
+				QoE1=0
+				QoE2=0
+				QoE3=0
+				QoE4=0
 
 				for e in requests:
 					real[e.name].count+=1
 					if e.name in cache_list:
 						hit1+=1
-					if e.name in cache_list2:
-						hit2+=1
-					if e.name in cache_list3:
-						hit3+=1
-					if e.name in cache_list4:
-						hit4+=1
-					'''if e.name in cache_list:
-						hit1+=1
-						init1+=1/10/1000
-						init1+=Cbuf/users[e.source].bandwidth
-						init1+=Cbuf/p
+						Q1[0]+=math.log(users[e.source].bandwidth/0.5)
+						Q1[1]-=RTTf/1000
+						Q1[1]-=Cbuf/users[e.source].bandwidth
+						Q1[1]-=Cbuf/p
+						Q1[2]+=min(1,0.5*(1+w/(users[e.source].bandwidth-w)))
 					else:
-						init1+=1/10/1000
-						init1+=1/70/1000
-						init1+=Cbuf/users[e.source].bandwidth
-						init1+=Cbuf/w
+						Q1[0]+=math.log(w/0.5)
+						Q1[1]-=RTTf/1000
+						Q1[1]-=RTTB/1000
+						Q1[1]-=Cbuf/users[e.source].bandwidth
+						Q1[1]-=Cbuf/w
 
 					if e.name in cache_list2:
 						hit2+=1
-						init2+=1/10/1000
-						init2+=Cbuf/users[e.source].bandwidth
-						init2+=Cbuf/p						
+						Q2[0]+=math.log(users[e.source].bandwidth/0.5)
+						Q2[1]-=RTTf/1000
+						Q2[1]-=Cbuf/users[e.source].bandwidth
+						Q2[1]-=Cbuf/p
+						Q2[2]+=1			
 					else:
-						init2+=1/10/1000
-						init2+=1/70/1000
-						init2+=Cbuf/users[e.source].bandwidth
-						init2+=Cbuf/w						
+						Q2[0]+=math.log(w/0.5)
+						Q2[1]-=RTTf/1000
+						Q2[1]-=RTTB/1000
+						Q2[1]-=Cbuf/users[e.source].bandwidth
+						Q2[1]-=Cbuf/w
 					if e.name in cache_list3:
 						hit3+=1
-						init3+=1/10/1000
-						init3+=Cbuf/users[e.source].bandwidth
-						init3+=Cbuf/p						
+						Q3[0]+=math.log(users[e.source].bandwidth)
+						Q3[1]-=RTTf/1000
+						Q3[1]-=Cbuf/users[e.source].bandwidth
+						Q3[1]-=Cbuf/p
+						Q3[2]+=1					
 					else:
-						init3+=1/10/1000
-						init3+=1/70/1000
-						init3+=Cbuf/users[e.source].bandwidth
-						init3+=Cbuf/w						
+						Q3[0]+=math.log(w)
+						Q3[1]-=RTTf/1000
+						Q3[1]-=RTTB/1000
+						Q3[1]-=Cbuf/users[e.source].bandwidth
+						Q3[1]-=Cbuf/w					
 					if e.name in cache_list4:
 						hit4+=1
-						init4+=1/10/1000
-						init4+=Cbuf/users[e.source].bandwidth
-						init4+=Cbuf/p						
+						Q4[0]+=math.log(users[e.source].bandwidth/0.5)
+						Q4[1]-=RTTf/1000
+						Q4[1]-=Cbuf/users[e.source].bandwidth
+						Q4[1]-=Cbuf/p
+						Q4[2]+=1
 					else:
-						init4+=1/10/1000
-						init4+=1/70/1000
-						init4+=Cbuf/users[e.source].bandwidth
-						init4+=Cbuf/w	'''					
-
-				'''print(w/(len(requests)+1-hit2)/1024/1024/8)
-		
-				if w/(r_num-hit1)/1024/1024/8 >2.5:
-					w1=2.5
-				if w/(r_num-hit2)/1024/1024/8 >2.5:
-					w2=2.5
-				if w/(r_num-hit3)/1024/1024/8 >2.5:
-					w3=2.5
-				if w/(r_num-hit4)/1024/1024/8 >2.5:
-					w4=2.5
-
+						Q4[0]+=math.log(w/0.5)
+						Q4[1]-=RTTf/1000
+						Q4[1]-=RTTB/1000
+						Q4[1]-=Cbuf/users[e.source].bandwidth
+						Q4[1]-=Cbuf/w	
 								
-				bitrate1=math.log((hit1*2.5*1024*1024*8 + w)/r_num)
-				bitrate2=math.log((hit2*2.5*1024*1024*8 + w)/r_num)
-				bitrate3=math.log((hit3*2.5*1024*1024*8 + w)/r_num)
-				bitrate4=math.log((hit4*2.5*1024*1024*8 + w)/r_num)
-				Q1=qa*bitrate1-qb*init1
-				Q2=qa*bitrate2-qb*init2
-				Q3=qa*bitrate3-qb*init3
-				Q4=qa*bitrate4-qb*init4'''
+				QoE1=sum(Q1)/(len(requests)+1)
+				QoE2=sum(Q2)/(len(requests)+1)
+				QoE3=sum(Q3)/(len(requests)+1)
+				QoE4=sum(Q4)/(len(requests)+1)
+
 			requests=[]
 			share()
 			r_num=len(requests)
@@ -357,24 +356,23 @@ for n in range(x_num):
 			self_watch()
 			print('self',len(requests))
 			update_cache()
-			if i%7==0:
+			if i%5==0:
 				for j in range(people):
 					users[j].watched=set()
 			print(i)
 
-			h1.append(float(hit1)/(r_num+1))
+			'''h1.append(float(hit1)/(r_num+1))
 			h2.append(float(hit2)/(r_num+1))
 			h3.append(float(hit3)/(r_num+1))
-			h4.append(float(hit4)/(r_num+1))
-			'''if i>0:
-				h1.append(Q1)
-				h2.append(Q2)
-				h3.append(Q3)
-				h4.append(Q4)'''
+			h4.append(float(hit4)/(r_num+1))'''
+			h1.append(QoE1)
+			h2.append(QoE2)
+			h3.append(QoE3)
+			h4.append(QoE4)
 			if i>int(capacity/100):
-				if capacity!=0 and len(cache_list3)>0:
+				'''if capacity!=0 and len(cache_list3)>0:
 					cache_list3.pop(np.random.randint(len(cache_list3)))
-					occupation3-=100
+					occupation3-=100'''
 
 				buf=sorted(real,key=lambda x: x.count, reverse=False)
 				
@@ -410,11 +408,11 @@ n3=scale(n3)
 n4=scale(n4)'''
 plt.plot(t,n1,"g",label='proposed')
 plt.plot(t,n2,"b",label='most popular')
-plt.plot(t,n3,"r",label='random')
+#plt.plot(t,n3,"r",label='random')
 plt.plot(t,n4,"y",label='LFU')
 plt.xlabel("time slot")
-#plt.ylabel("QoE")
-plt.ylabel("hitrate")
+plt.ylabel("QoE")
+#plt.ylabel("hitrate")
 plt.legend()
 '''plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
