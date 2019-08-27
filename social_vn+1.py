@@ -13,10 +13,10 @@ alpha=1.2
 capacity=2500
 interval=100
 times=1
-x_num=1
+x_num=10
 file_num=10000
-people=1900
-day=195
+people=1900+1005
+day=527
 Cbuf=1
 qa=0.5
 qb=0.5
@@ -41,8 +41,6 @@ class user:
 		self.model=[0]*people
 		self.connect = [0]*people
 		self.edge = [0]*people
-		self.active=0
-		self.count=0
 		self.bandwidth=np.random.normal(3,0.5)
 
 
@@ -57,10 +55,10 @@ def init():
 		for j in range(people):
 			users[i].Iij.append([])
 			table[i].append([])
-		for j in range(day):
-			users[i].interaction.append([])
+		#for j in range(day):
+		#	users[i].interaction.append([])
 
-	'''with open('CollegeMsg.txt','r') as f:
+	with open('CollegeMsg.txt','r') as f:
 		edge=f.read().split()
 		i=0
 		while i+1<len(edge):
@@ -75,44 +73,7 @@ def init():
 		i=0
 		while i+1<len(edge):
 			users[int(edge[i])+1900].connect[int(edge[i+1])+1900]+=1
-			i+=3'''
-
-	with open('CollegeMsg.txt','r') as f:
-		edge=f.read().split()
-		i=0
-		while i+1<len(edge):
-			timestamp=int((int(edge[i+2])-1082040961)/60/60/24)
-			users[int(edge[i])].interaction[timestamp].append(int(edge[i+1]))
-			users[int(edge[i])].connect[int(edge[i+1])]+=1	
-			users[int(edge[i])].count+=1
 			i+=3
-
-	for i in range(people):
-		for j in range(people):
-			if 	users[i].connect[j]>1:
-				users[i].Iij[j]=[0]*day
-
-	for i in range(people):
-		for j in range(day):
-			users[i].interaction[j].sort()
-			total=len(users[i].interaction[j])
-			index=0
-			while index<total:
-				who=users[i].interaction[j][index]
-				contact_num=users[i].interaction[j].count(who)
-				if users[i].connect[who]>1:
-					users[i].Iij[who][j]=contact_num/total
-				index+=contact_num
-	
-	for i in range(people):
-		users[i].active=users[i].count/day
-
-	'''for i in range(people):
-		m=max(users[i].connect)
-		if m==0:
-			continue
-		for j in range(people):
-			users[i].connect[j]/=m'''
 
 def possible(source , destination):
 
@@ -140,21 +101,22 @@ n4=[0]*interval
 t=range(interval)
 x=range(x_num)
 init()
-def update_graph_route(day):
+def update_graph_route():
 	for a in range(people):
 		for b in range(people):
+			if users[a].connect[b]>10:
+				users[a].edge[b]=np.random.poisson(0.3)
 			book=dict()
 			for b in range(people):
-				if users[a].connect[b]>1:
-					if users[a].Iij[b][day]>0:
-						book[b]=users[a].Iij[b][day]
+				if users[a].edge[b]>0:
+					book[b]=users[a].edge[b]
 			graph[a]=book
 
 	for a in range(people):
 		for b in range(people):
 			if a!=b:
 				table[a][b]=possible(a,b)
-#update_graph_route()
+update_graph_route()
 for n in range(x_num):
 	
 	for u in range(times):
@@ -205,23 +167,23 @@ for n in range(x_num):
 				global occupation4
 				done4=False
 				for j in range(people):
-					if np.random.rand()<=users[j].active:
+					if np.random.rand()<np.random.poisson(0.05):
 						a=np.random.zipf(alpha)
 						while a>=file_num or a<=0:
 							a=np.random.zipf(alpha)
 							if a<100:
 								a=-1
-
 						requests.append(request(a,j))
 						users[j].watched.add(a)
+
 						if occupation4<capacity and (a not in cache_list4) and not done4:
 							cache_list4.add(a)
 							occupation4+=100
 							done4=True
+
 						for k in range(people):
-							if users[j].connect[k]>1:
-								if np.random.rand()<=users[j].Iij[k][i]:
-									users[k].wait_watch.add(a)
+							if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
+								users[k].wait_watch.add(a)
 
 				if occupation3<capacity:
 					a=np.random.zipf(alpha)
@@ -289,17 +251,16 @@ for n in range(x_num):
 				#wait_watch and spread
 				for j in range(people):
 					num=len(users[j].wait_watch)
-					#print(users[j].wait_watch)
 					if num>0:
 						for e in range(num):
 							try:
 								a = int(users[j].wait_watch.pop())
-								if 1:
+								if a not in users[j].watched:
 									requests.append(request(a,j))
 									users[j].watched.add(a)
-									for k in range(people):
-										if users[j].connect[k]>1 and np.random.rand()<=users[j].Iij[k][i]:
-											users[k].wait_buf.add(a)
+								for k in range(people):
+									if users[j].connect[k]>10 and np.random.rand()<users[j].edge[k] and a not in users[k].watched:
+										users[k].wait_buf.add(a)
 							except:
 								break
 			
@@ -314,25 +275,16 @@ for n in range(x_num):
 				global hit2
 				global hit3
 				global hit4
-				'''global QoE1
+				global QoE1
 				global QoE2
 				global QoE3
 				global QoE4
 				QoE1=0
 				QoE2=0
 				QoE3=0
-				QoE4=0'''
+				QoE4=0
+
 				for e in requests:
-					real[e.name].count+=1
-					if e.name in cache_list:
-						hit1+=1
-					if e.name in cache_list2:
-						hit2+=1
-					if e.name in cache_list3:
-						hit3+=1
-					if e.name in cache_list4:
-						hit4+=1
-				'''for e in requests:
 					real[e.name].count+=1
 					if e.name in cache_list:
 						hit1+=1
@@ -391,8 +343,8 @@ for n in range(x_num):
 				QoE1=sum(Q1)/(len(requests)+1)
 				QoE2=sum(Q2)/(len(requests)+1)
 				QoE3=sum(Q3)/(len(requests)+1)
-				QoE4=sum(Q4)/(len(requests)+1)'''
-			update_graph_route(i)
+				QoE4=sum(Q4)/(len(requests)+1)
+
 			requests=[]
 			share()
 			r_num=len(requests)
@@ -404,19 +356,19 @@ for n in range(x_num):
 			self_watch()
 			print('self',len(requests))
 			update_cache()
-			if i%3==0:
+			if i%5==0:
 				for j in range(people):
 					users[j].watched=set()
 			print(i)
 
-			h1.append(float(hit1)/(r_num+1))
+			'''h1.append(float(hit1)/(r_num+1))
 			h2.append(float(hit2)/(r_num+1))
 			h3.append(float(hit3)/(r_num+1))
-			h4.append(float(hit4)/(r_num+1))
-			'''h1.append(QoE1)
+			h4.append(float(hit4)/(r_num+1))'''
+			h1.append(QoE1)
 			h2.append(QoE2)
 			h3.append(QoE3)
-			h4.append(QoE4)'''
+			h4.append(QoE4)
 			if i>int(capacity/100):
 				'''if capacity!=0 and len(cache_list3)>0:
 					cache_list3.pop(np.random.randint(len(cache_list3)))
@@ -459,8 +411,8 @@ plt.plot(t,n2,"b",label='most popular')
 #plt.plot(t,n3,"r",label='random')
 plt.plot(t,n4,"y",label='LFU')
 plt.xlabel("time slot")
-#plt.ylabel("QoE")
-plt.ylabel("hitrate")
+plt.ylabel("QoE")
+#plt.ylabel("hitrate")
 plt.legend()
 '''plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
