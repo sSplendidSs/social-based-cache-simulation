@@ -7,7 +7,11 @@ popularity=dict()
 user=list()
 #14天
 #16337人
-with open('youtube.parsed.061807.24.dat') as f:
+#9343人
+#84602個
+#598人
+#4513
+with open('youtube.parsed.012908.dat') as f:
 	edge=f.read().split('\n')
 	for i in range(len(edge)):
 		edge[i]=edge[i].split()
