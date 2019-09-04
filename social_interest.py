@@ -1,43 +1,120 @@
 import matplotlib.pyplot as plt
-import operator
 x=list()
-#y=[0]*336
-y=list()
-popularity=dict()
+y1=list()
+y2=list()
+y3=list()
+y4=list()
 users=list()
+files=list()
 userbook=dict()
-#14天
-#16337人
+filebook=dict()
+cache_list1=set()
+cache_list2=set()
+capacity=5000
+occupation1=0
+occupation2=0
+occupation3=0
+occupation4=0
+#14
+#16337
+#4513
 class user:
 	def __init__(self):
 		self.history=list()
 		self.interest=[0]*16337
+class file:
+	def __init__(self, file_name):
+		self.file_name = file_name
+		self.count = 0
+		self.score = 0
 
 with open('youtube.parsed.061807.24.dat') as f:
 	edge=f.read().split('\n')
-	count=0
+	i_user=0
+	i_file=0
 	for i in range(len(edge)):
 		edge[i]=edge[i].split()
-		#edge[i][0]=int(float(edge[i][0])-1201639675)
+		#edge[i][0]=int(float(edge[i][0])-1181102401)
+		edge[i][0]=int(float(edge[i][0])-1201639675)
 		if edge[i][2] not in userbook:
-			userbook[edge[i][2]]=count
-			count+=1
-			user.append(user())
+			userbook[edge[i][2]]=i_user
+			i_user+=1
+			users.append(user())
 		users[userbook[edge[i][2]]].history.append(edge[i][4])
+
+		if edge[i][4] not in filebook:
+			filebook[edge[i][4]]=i_file
+			files.append(file(i_file))
+			i_file+=1
+
 	for i in range(len(users)):
 		for j in range(len(users)):
+			if i==j:
+				continue
 			a=len(users[i].history)
 			b=len(users[j].history)
 			similar=0
 			for e in users[i].history:
 				if e in users[j].history:
 					similar+=1
-			users[i].interest[j]=similar
-	for i in range(len(users)):
-		print(users[i].interest)
-
+			users[i].interest[j]=similar/a/b
+	'''for i in range(len(users)):
+		for e in users[i].interest:
+			if e!=0:
+				print(e)'''
+	requests=list()
+	hour=1
+	num=0
+	hit=[0]*4
+	for e in edge:
+		#print(e[0]/3600)
+		if e[0]/3600==hour:
+			occupation1=0
+			occupation2=0
+			cache_list1=set()
+			cache_list2=set()
+			buf=sorted(files, key=lambda x: x.score, reverse=True)
+			for e in buf:					
+				if occupation1 <capacity:
+					if e.file_name not in cache_list2:
+						cache_list1.add(e.file_name)
+						occupation1+=100
+				else:
+					break
+			buf=sorted(files, key=lambda x: x.count, reverse=True)
+			for e in buf:					
+				if occupation2 <capacity:
+					if e.file_name not in cache_list2:
+						cache_list2.add(e.file_name)
+						occupation2+=100
+				else:
+					break		
+			print(cache_list1)	
+			y1.append(hit[0]/num)
+			y2.append(hit[1]/num)
+			y3.append(hit[2]/num)
+			y4.append(hit[3]/num)			
+			hour+=1
+			num=0
+			for i in range(len(hit)):
+				hit[i]=0
+		else:
+			files[filebook[e[4]]].count+=1
+			files[filebook[e[4]]].score+=sum(users[userbook[edge[i][2]]].interest)
+			print(filebook[e[4]])
+			if filebook[e[4]] in cache_list1:
+				print('fuc')
+				hit[0]+=1
+			if filebook[e[4]] in cache_list2:
+				hit[1]+=1		
+			'''if e[4] in cache_list3:
+				hit[2]+=1
+			if e[4] in cache_list4:
+				hit[3]+=1'''
+			num+=1
 
 plt.xlabel("hour")
 plt.ylabel("number of requests")
-plt.plot(y,"g",)
+plt.plot(y1,"g",)
+plt.plot(y2,"b",)
 plt.show()
