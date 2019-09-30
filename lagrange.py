@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 ThB=1.25
 quality=0.2
 stall=0.8
-b1 = tf.Variable(tf.random_normal(shape=[1],mean=2,stddev=0))
+b1 = tf.Variable(1.0)
 b2 = tf.Variable(tf.random_normal(shape=[1],mean=2,stddev=0))
 b3 = tf.Variable(tf.random_normal(shape=[1],mean=2,stddev=0))
 b4 = tf.Variable(tf.random_normal(shape=[1],mean=2,stddev=0))
@@ -39,7 +39,7 @@ with tf.Session() as sess:
         	sess.run(train_op)
         else:
         	break
-        print((i,loss_show,b1s,b2s,b3s,b4s,b5s))
+        print((i,loss_show,float(b1s),b2s,b3s,b4s,b5s))
 plt.plot(ite,bi1,"g",)
 plt.plot(ite,bi2,"b",)
 plt.plot(ite,bi3,"y",)
