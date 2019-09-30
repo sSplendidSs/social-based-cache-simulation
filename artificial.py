@@ -1,4 +1,4 @@
-from statsmodels.tsa.arima_model import ARIMA
+#from statsmodels.tsa.arima_model import ARIMA
 #from sklearn.preprocessing import scale
 from scipy import optimize as op
 import matplotlib.pyplot as plt
