@@ -2,14 +2,13 @@ import numpy as np
 #import tensorflow as tf
 from scipy import stats
 import matplotlib.pyplot as plt
-
 people=1005
-alpha=0.9
+alpha=0.7
 file_num=2000
 capacity=50
-interval=430
+interval=220
 x_n=10
-times=1
+times=10
 bound=np.arange(1, file_num)
 weights=bound**(-alpha)
 weights/=weights.sum()
@@ -152,9 +151,9 @@ for abcde in range(x_n):
 						CL3.pop(sortedLFU[0][0])
 						occupation3-=1
 
-					if occupation4>=capacity:
+					'''if occupation4>=capacity:
 						CL4.pop(np.random.randint(len(CL4)))
-						occupation4-=1
+						occupation4-=1'''
 					
 					CL1=list()
 					CL2=list()
@@ -165,12 +164,12 @@ for abcde in range(x_n):
 							break
 						CL1.append(e.id)
 						occupation1+=0.5
-					while occupation1<capacity*2:	
+					while occupation1<capacity:	
 						o=bounded_zipf.rvs()
 						while 1:
 							if o not in CL1:
 								CL1.append(o)
-								occupation1+=1
+								occupation1+=0.5
 								break
 							o=bounded_zipf.rvs()
 
@@ -190,11 +189,11 @@ for abcde in range(x_n):
 								break
 							o=bounded_zipf.rvs()
 
-					for a in requests:
+					'''for a in requests:
 							if occupation3<capacity and a not in CL3:
 								CL3[a]=0
 								occupation3+=1
-							'''if occupation4<capacity and a not in CL4:
+							if occupation4<capacity and a not in CL4:
 								CL4.append(a)
 								occupation4+=1'''
 					while occupation3<capacity:	
