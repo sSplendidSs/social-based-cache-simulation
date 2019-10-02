@@ -7,9 +7,9 @@ people=1005
 alpha=0.7
 file_num=2000
 capacity=50
-interval=50
+interval=67
 x_n=20
-times=10
+times=1
 bound=np.arange(1, file_num)
 weights=bound**(-alpha)
 weights/=weights.sum()
@@ -21,6 +21,7 @@ class user:
 		self.watched=dict()
 		self.connect=[0]*people
 		self.friends=dict()
+		self.active=0
 class file:
 	def __init__(self, file_name):
 		self.id=file_name
@@ -65,6 +66,7 @@ for abcde in range(x_n):
 				timestamp=int((int(edge[ii+2]))/60/60/24)
 				users[int(edge[ii])].connect[int(edge[ii+1])]+=1
 				users[int(edge[ii])].friends[int(edge[ii+1])]=0
+				users[int(edge[ii])].active+=1
 				ii+=3
 				#evaluate&update at time slot=1 hour
 				if timestamp>day:
@@ -82,24 +84,17 @@ for abcde in range(x_n):
 						occupation1+=0.5
 					buf=sorted(files, key=lambda x: x.count, reverse=True)
 					for e in buf:
-						if occupation2>=capacity:
+						if occupation2>capacity:
 							break
 						CL2.append(e.id)
 						occupation2+=1
 					#calculate importance
 					for i in range(people):
 						if len(users[i].friends)>1:
+							m=max(users[i].connect)
 							for k in users[i].friends.keys():
-								users[i].friends[k]=users[i].connect[k]
-							sorted_f = sorted(users[i].friends.items(), key=lambda kv: kv[1])
-							ma=sorted_f[-1][1]
-							mi=sorted_f[0][1]
-							if ma!=mi:
-								for j in range(people):
-									users[i].connect[j]=(users[i].connect[j]-mi)/ma
-						else:
-							for k in users[i].friends.keys():
-								users[i].connect[k]=0
+								users[i].friends[k]=users[i].connect[k]/m
+
 					#pour			
 					for i in range(people):
 						users[i].wait_watch|=users[i].wait_buf
@@ -107,11 +102,13 @@ for abcde in range(x_n):
 
 					#watch shared
 					for i in range(people):
+						#if users[i].active==0:
+						#	continue
 						for e in users[i].wait_watch:
 							if e not in users[i].watched:
 								users[i].watched[e]=7
 								files[e].count+=1
-								files[e].score+=sum(users[i].connect)
+								files[e].score=1+sum(v for v in users[i].friends.values())
 								if e in CL1:
 									hit1+=1
 								if e in CL2:
@@ -126,7 +123,7 @@ for abcde in range(x_n):
 								#seen by friends
 								if len(users[i].friends)>1:
 									for f in users[i].friends:
-										if np.random.rand()<users[i].connect[f]:
+										if np.random.rand()<users[i].friends[f]:
 											users[f].wait_buf.add(a)					
 					
 					if occupation3>=capacity:
@@ -138,14 +135,20 @@ for abcde in range(x_n):
 						CL4.pop(np.random.randint(len(CL4)))
 						occupation4-=1
 
+					'''buf=sorted(users, key=lambda x: x.active, reverse=True)
+					ma=buf[0].active
+					for e in buf:
+						if e.active==0:
+							break
+						mi=e.active'''
 					#self watch
 					for i in range(people):
-						if np.random.rand()<0.01:
+						if users[i].active>0 and np.random.rand()<0.2:
 							a=bounded_zipf.rvs()
 							if a not in users[i].watched:
 								users[i].watched[a]=7
 								files[a].count+=1
-								files[a].score+=sum(users[i].connect)
+								files[a].score=1+sum(v for v in users[i].friends.values())
 								if occupation3<capacity and a not in CL3:
 									CL3[a]=0
 									occupation3+=1
@@ -166,10 +169,12 @@ for abcde in range(x_n):
 								#seen by friends
 								if len(users[i].friends)>1:
 									for f in users[i].friends:
-										if np.random.rand()<users[i].connect[f]:
+										if np.random.rand()<users[i].friends[f]:
 											users[f].wait_watch.add(a)
 					#print(day)
-					#print(requests)
+					print(requests)
+					print(len(CL1))
+					print(len(CL3))
 					for m in users:
 						execu=list()
 						for n in m.watched:
@@ -182,13 +187,13 @@ for abcde in range(x_n):
 					for e in users:
 						e.connect=[0]*people
 						e.friends=dict()
+						e.active=0
 
 					day+=1
 					if day>interval:
 						break
 
 
-			print(len(CL3))
 	print(hit1/requests)
 	print(hit2/requests)	
 	print(hit3/requests)
