@@ -1,13 +1,13 @@
 import numpy as np
 #import tensorflow as tf
-import scipy.stats as stats
+from scipy import stats
 import matplotlib.pyplot as plt
 
 people=1005
-alpha=0.7
+alpha=0.56
 file_num=2000
 capacity=50
-interval=67
+interval=431
 x_n=20
 times=1
 bound=np.arange(1, file_num)
@@ -68,6 +68,7 @@ for abcde in range(x_n):
 				users[int(edge[ii])].friends[int(edge[ii+1])]=0
 				users[int(edge[ii])].active+=1
 				ii+=3
+
 				#evaluate&update at time slot=1 hour
 				if timestamp>day:
 					occupation1=0
@@ -93,7 +94,7 @@ for abcde in range(x_n):
 						if len(users[i].friends)>1:
 							m=max(users[i].connect)
 							for k in users[i].friends.keys():
-								users[i].friends[k]=users[i].connect[k]/m
+								users[i].friends[k]=float(users[i].connect[k])/m
 
 					#pour			
 					for i in range(people):
@@ -172,9 +173,9 @@ for abcde in range(x_n):
 										if np.random.rand()<users[i].friends[f]:
 											users[f].wait_watch.add(a)
 					#print(day)
-					print(requests)
-					print(len(CL1))
-					print(len(CL3))
+					#print(requests)
+					#print(len(CL1))
+					#print(len(CL3))
 					for m in users:
 						execu=list()
 						for n in m.watched:
@@ -190,6 +191,9 @@ for abcde in range(x_n):
 						e.active=0
 
 					day+=1
+					#print(day)
+					if day==67:
+						day=72
 					if day>interval:
 						break
 
@@ -198,10 +202,10 @@ for abcde in range(x_n):
 	print(hit2/requests)	
 	print(hit3/requests)
 	print(hit4/requests)	
-	n1.append(hit1/requests)
-	n2.append(hit2/requests)
-	n3.append(hit3/requests)
-	n4.append(hit4/requests)
+	n1.append(float(hit1/requests))
+	n2.append(float(hit2/requests))
+	n3.append(float(hit3/requests))
+	n4.append(float(hit4/requests))
 	#alpha+=0.1
 	capacity+=10
 plt.plot(range(x_n),n1,"g",)
