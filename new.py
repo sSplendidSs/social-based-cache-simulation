@@ -144,22 +144,17 @@ for abcde in range(x_n):
 						if v==0:
 							execu.append(k)
 							full=False
-					#print(len(CL3))
 					for e in execu:
 						CL3.pop(e)
 						occupation3-=1
-						'''
-						
-					#print(len(CL3))
 					if occupation3>=capacity and full:
-						print('y')
 						sortedLFU=sorted(CL3.items(), key=lambda kv: kv[1])
 						CL3.pop(sortedLFU[0][0])
-						occupation3-=1'''
+						occupation3-=1
 
-					'''if occupation4>=capacity:
+					if occupation4>=capacity:
 						CL4.pop(np.random.randint(len(CL4)))
-						occupation4-=1'''
+						occupation4-=1
 					
 					CL1=list()
 					CL2=list()
@@ -178,6 +173,7 @@ for abcde in range(x_n):
 								occupation1+=1
 								break
 							o=bounded_zipf.rvs()
+
 					buf=sorted(files, key=lambda x: x.count, reverse=True)
 					for e in buf:
 						if occupation2>capacity or e.count==0:
