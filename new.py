@@ -44,7 +44,6 @@ for abcde in range(x_n):
 	hit2=0
 	hit3=0
 	hit4=0
-	requests=0
 	for wxyz in range(times):
 		#init
 		users=list()
@@ -62,6 +61,7 @@ for abcde in range(x_n):
 			day=0
 			CL3=dict()
 			CL4=list()
+
 			while ii+1<len(edge):
 				timestamp=int((int(edge[ii+2]))/60/60/24)
 				users[int(edge[ii])].connect[int(edge[ii+1])]+=1
@@ -76,6 +76,54 @@ for abcde in range(x_n):
 					CL1=list()
 					CL2=list()
 
+					#self watch
+					requests=list()
+					for i in range(people):
+						if users[i].active>0 and np.random.rand()<0.2:
+							a=bounded_zipf.rvs()
+							if a not in users[i].watched:
+								users[i].watched[a]=7
+								files[a].count+=1
+								files[a].score=1+sum(v for v in users[i].friends.values())
+								requests.append(a)
+
+								#seen by friends
+								if len(users[i].friends)>1:
+									for f in users[i].friends:
+										if np.random.rand()<users[i].friends[f]:
+											users[f].wait_watch.add(a)
+
+					#watch shared
+					#pour			
+					for i in range(people):
+						users[i].wait_watch|=users[i].wait_buf
+						users[i].wait_buf=set()	
+					for i in range(people):
+						for e in users[i].wait_watch:
+							if e not in users[i].watched:
+								users[i].watched[e]=7
+								files[e].count+=1
+								files[e].score=1+sum(v for v in users[i].friends.values())
+								requests.append(e)
+								
+								#seen by friends
+								if len(users[i].friends)>1:
+									for f in users[i].friends:
+										if np.random.rand()<users[i].friends[f]:
+											users[f].wait_buf.add(a)	
+
+					#evaluate
+					for e in requests:
+						if a in CL1:
+							hit1+=1
+						if a in CL2:
+							hit2+=1
+						if a in CL3:
+							hit3+=1
+							CL3[a]+=1
+						if a in CL4:
+							hit4+=1
+
 					#determine cache
 					buf=sorted(files, key=lambda x: x.score, reverse=True)
 					for e in buf:
@@ -89,43 +137,21 @@ for abcde in range(x_n):
 							break
 						CL2.append(e.id)
 						occupation2+=1
+
+					for a in requests:
+							if occupation3<capacity and a not in CL3:
+								CL3[a]=0
+								occupation3+=1
+							if occupation4<capacity and a not in CL4:
+								CL4.append(a)
+								occupation4+=1
+
 					#calculate importance
 					for i in range(people):
 						if len(users[i].friends)>1:
 							m=max(users[i].connect)
 							for k in users[i].friends.keys():
-								users[i].friends[k]=float(users[i].connect[k])/m
-
-					#pour			
-					for i in range(people):
-						users[i].wait_watch|=users[i].wait_buf
-						users[i].wait_buf=set()
-
-					#watch shared
-					for i in range(people):
-						#if users[i].active==0:
-						#	continue
-						for e in users[i].wait_watch:
-							if e not in users[i].watched:
-								users[i].watched[e]=7
-								files[e].count+=1
-								files[e].score=1+sum(v for v in users[i].friends.values())
-								if e in CL1:
-									hit1+=1
-								if e in CL2:
-									hit2+=1
-								if e in CL3:
-									hit3+=1
-									CL3[e]+=1
-								if e in CL4:
-									hit4+=1
-								requests+=1
-
-								#seen by friends
-								if len(users[i].friends)>1:
-									for f in users[i].friends:
-										if np.random.rand()<users[i].friends[f]:
-											users[f].wait_buf.add(a)					
+								users[i].friends[k]=users[i].connect[k]/m		
 					
 					if occupation3>=capacity:
 						sortedLFU = sorted(CL3.items(), key=lambda kv: kv[1])
@@ -136,46 +162,10 @@ for abcde in range(x_n):
 						CL4.pop(np.random.randint(len(CL4)))
 						occupation4-=1
 
-					'''buf=sorted(users, key=lambda x: x.active, reverse=True)
-					ma=buf[0].active
-					for e in buf:
-						if e.active==0:
-							break
-						mi=e.active'''
-					#self watch
-					for i in range(people):
-						if users[i].active>0 and np.random.rand()<0.2:
-							a=bounded_zipf.rvs()
-							if a not in users[i].watched:
-								users[i].watched[a]=7
-								files[a].count+=1
-								files[a].score=1+sum(v for v in users[i].friends.values())
-								if occupation3<capacity and a not in CL3:
-									CL3[a]=0
-									occupation3+=1
-								if occupation4<capacity and a not in CL4:
-									CL4.append(a)
-									occupation4+=1
-								if a in CL1:
-									hit1+=1
-								if a in CL2:
-									hit2+=1
-								if a in CL3:
-									hit3+=1
-									CL3[a]+=1
-								if a in CL4:
-									hit4+=1
-								requests+=1
-
-								#seen by friends
-								if len(users[i].friends)>1:
-									for f in users[i].friends:
-										if np.random.rand()<users[i].friends[f]:
-											users[f].wait_watch.add(a)
 					#print(day)
 					#print(requests)
-					#print(len(CL1))
-					#print(len(CL3))
+
+					#update parameter every time slot
 					for m in users:
 						execu=list()
 						for n in m.watched:
@@ -198,14 +188,14 @@ for abcde in range(x_n):
 						break
 
 
-	print(hit1/requests)
-	print(hit2/requests)	
-	print(hit3/requests)
-	print(hit4/requests)	
-	n1.append(float(hit1/requests))
-	n2.append(float(hit2/requests))
-	n3.append(float(hit3/requests))
-	n4.append(float(hit4/requests))
+	print(float(hit1)/requests)
+	print(float(hit2)/requests)
+	print(float(hit3)/requests)
+	print(float(hit4)/requests)
+	n1.append(float(hit1)/requests)
+	n2.append(float(hit2)/requests)
+	n3.append(float(hit3)/requests)
+	n4.append(float(hit4)/requests)
 	#alpha+=0.1
 	capacity+=10
 plt.plot(range(x_n),n1,"g",)
