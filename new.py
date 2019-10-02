@@ -3,11 +3,11 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
-alpha=0.7
+alpha=0.5
 file_num=2000
-capacity=50
+capacity=150
 interval=220
-x_n=10
+x_n=8
 times=10
 bound=np.arange(1, file_num)
 weights=bound**(-alpha)
@@ -43,6 +43,11 @@ for abcde in range(x_n):
 	hit2=0
 	hit3=0
 	hit4=0
+	QoE1=0
+	QoE2=0
+	QoE3=0
+	QoE4=0
+
 	count=0
 	for wxyz in range(times):
 		#init
@@ -128,13 +133,17 @@ for abcde in range(x_n):
 					for e in requests:
 						if a in CL1:
 							hit1+=1
+							QoE1+=0.8
 						if a in CL2:
 							hit2+=1
+							QoE2+=1
 						if a in CL3:
 							hit3+=1
 							CL3[a]+=1
+							QoE3+=1
 						if a in CL4:
 							hit4+=1
+							QoE4+=1
 
 					#determine cache
 					full=True
@@ -243,10 +252,23 @@ for abcde in range(x_n):
 	n2.append(float(hit2)/count)
 	n3.append(float(hit3)/count)
 	n4.append(float(hit4)/count)
-	#alpha+=0.1
-	capacity+=10
-plt.plot(range(x_n),n1,"g",)
-plt.plot(range(x_n),n2,"b",)
-plt.plot(range(x_n),n3,"r",)
-plt.plot(range(x_n),n4,"y",)
+	alpha+=0.1
+	#capacity+=10
+x=list()
+for i in range(x_n):
+	x.append(0.5+i*0.1)
+
+plt.plot(x,n1,"go",)
+plt.plot(x,n2,"bo",)
+plt.plot(x,n3,"ro",)
+plt.plot(x,n4,"yo",)
+plt.plot(x,n1,"g",label='proposed')
+plt.plot(x,n2,"b",label='most popular')
+plt.plot(x,n3,"r",label='random')
+plt.plot(x,n4,"y",label='LFU')
+plt.xlabel("alpha")
+#plt.xlabel("cache size")
+#plt.ylabel("QoE")
+plt.ylabel("hit rate")
+plt.legend()
 plt.show()
