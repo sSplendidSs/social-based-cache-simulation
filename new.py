@@ -3,16 +3,13 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
-alpha=0.7
+alpha=0.5
 file_num=2000
-capacity=50
-interval=220
+capacity=100
+interval=20
 x_n=10
-times=10
-bound=np.arange(1, file_num)
-weights=bound**(-alpha)
-weights/=weights.sum()
-bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))
+times=30
+
 class user:
 	def __init__(self):
 		self.wait_watch=set()
@@ -47,8 +44,11 @@ for abcde in range(x_n):
 	QoE2=0
 	QoE3=0
 	QoE4=0
-
 	count=0
+	bound=np.arange(1, file_num)
+	weights=bound**(-alpha)
+	weights/=weights.sum()
+	bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))
 	for wxyz in range(times):
 		#init
 		users=list()
@@ -241,32 +241,32 @@ for abcde in range(x_n):
 						break
 
 
-	'''print(float(hit1)/count)
+	print(float(hit1)/count)
 	print(float(hit2)/count)
 	print(float(hit3)/count)
 	print(float(hit4)/count)
 	n1.append(float(hit1)/count)
 	n2.append(float(hit2)/count)
 	n3.append(float(hit3)/count)
-	n4.append(float(hit4)/count)'''
+	n4.append(float(hit4)/count)
 
-	print(float(QoE1+(count-hit1)*0.3)/count)
+	'''print(float(QoE1+(count-hit1)*0.3)/count)
 	print(float(QoE2+(count-hit2)*0.3)/count)
 	print(float(QoE3+(count-hit3)*0.3)/count)
 	print(float(QoE4+(count-hit4)*0.3)/count)
 	n1.append(float(QoE1+(count-hit1)*0.3)/count)
 	n2.append(float(QoE2+(count-hit2)*0.3)/count)
 	n3.append(float(QoE3+(count-hit3)*0.3)/count)
-	n4.append(float(QoE4+(count-hit4)*0.3)/count)
+	n4.append(float(QoE4+(count-hit4)*0.3)/count)'''
 
 
-	#alpha+=0.1
-	capacity+=10
+	alpha+=0.1
+	#capacity+=10
 x=list()
-'''for i in range(x_n):
-	x.append(0.5+i*0.1)'''
 for i in range(x_n):
-	x.append(50+i*10)
+	x.append(0.5+i*0.1)
+#for i in range(x_n):
+#	x.append(50+i*10)
 
 plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
@@ -276,9 +276,9 @@ plt.plot(x,n1,"g",label='proposed')
 plt.plot(x,n2,"b",label='most popular')
 plt.plot(x,n3,"r",label='random')
 plt.plot(x,n4,"y",label='LFU')
-#plt.xlabel("alpha")
-plt.xlabel("cache size")
-plt.ylabel("QoE")
-#plt.ylabel("hit rate")
+plt.xlabel("alpha")
+#plt.xlabel("cache size")
+#plt.ylabel("QoE")
+plt.ylabel("hit rate")
 plt.legend()
 plt.show()
