@@ -1,14 +1,18 @@
+import math
 import numpy as np
 #import tensorflow as tf
 from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
 alpha=0.5
-file_num=2000
-capacity=100
-interval=20
-x_n=10
-times=30
+file_num=1000
+capacity=50
+interval=430
+b=4
+qa=0.5
+qb=0.5
+x_n=7
+times=1
 
 class user:
 	def __init__(self):
@@ -18,6 +22,10 @@ class user:
 		self.connect=[0]*people
 		self.friends=dict()
 		self.active=0
+		self.downloading=False
+		self.remaining=300
+		self.cached=0
+		self.bt_1=0
 class file:
 	def __init__(self, file_name):
 		self.id=file_name
@@ -59,6 +67,11 @@ for abcde in range(x_n):
 			files.append(file(i))
 
 		with open('email-Eu-core-temporal.txt','r') as f:
+			q1=list()
+			q2=list()
+			q3=list()
+			q4=list()
+
 			occupation3=0
 			occupation4=0
 			edge=f.read().split()
@@ -67,7 +80,8 @@ for abcde in range(x_n):
 			CL1=list()
 			CL2=list()
 			CL3=dict()
-			CL4=list(bounded_zipf.rvs(size=capacity))
+			CL4=list()
+			#CL4=list(bounded_zipf.rvs(size=capacity))
 
 			while ii+1<len(edge):
 				timestamp=int((int(edge[ii+2]))/60/60/24)
@@ -78,8 +92,6 @@ for abcde in range(x_n):
 
 				#evaluate&update at time slot=1 hour
 				if timestamp>day:
-					occupation1=0
-					occupation2=0
 					
 					#calculate importance
 					for i in range(people):
@@ -101,7 +113,7 @@ for abcde in range(x_n):
 							continue
 						for e in users[i].wait_watch:
 							if e not in users[i].watched:
-								users[i].watched[e]=14
+								users[i].watched[e]=3
 								files[e].count+=1
 								files[e].score=1+sum(v for v in users[i].friends.values())
 								requests.append(e)
@@ -117,7 +129,7 @@ for abcde in range(x_n):
 						if np.random.rand()<0.01:
 							a=bounded_zipf.rvs()
 							if a not in users[i].watched:
-								users[i].watched[a]=14
+								users[i].watched[a]=3
 								files[a].count+=1
 								files[a].score=1+sum(v for v in users[i].friends.values())
 								requests.append(a)
@@ -134,6 +146,7 @@ for abcde in range(x_n):
 						if a in CL1:
 							hit1+=1
 							QoE1+=1
+
 						if a in CL2:
 							hit2+=1
 							QoE2+=1
@@ -146,77 +159,51 @@ for abcde in range(x_n):
 							QoE4+=1
 
 					#determine cache
-					full=True
-					execu=list()
-					for k,v in CL3.items():
-						if v==0:
-							execu.append(k)
-							full=False
-					for e in execu:
-						CL3.pop(e)
-						occupation3-=1
-					if occupation3>=capacity and full:
+					if occupation3>=capacity:
 						sortedLFU=sorted(CL3.items(), key=lambda kv: kv[1])
 						CL3.pop(sortedLFU[0][0])
 						occupation3-=1
 
-					'''if occupation4>=capacity:
+					if occupation4>=capacity:
 						CL4.pop(np.random.randint(len(CL4)))
-						occupation4-=1'''
-					
-					CL1=list()
-					CL2=list()
+						occupation4-=1
+
+					occupation1=0
+					occupation2=0					
+					CL1.clear()
+					CL2.clear()
 					
 					buf=sorted(files, key=lambda x: x.score, reverse=True)
 					for e in buf:
-						if occupation1>capacity or e.count==0:
+						if occupation1>=capacity or e.count==0:
 							break
 						CL1.append(e.id)
 						occupation1+=0.5
-					while occupation1<capacity:	
-						o=bounded_zipf.rvs()
-						while 1:
-							if o not in CL1:
-								CL1.append(o)
-								occupation1+=0.5
-								break
-							o=bounded_zipf.rvs()
 
 					buf=sorted(files, key=lambda x: x.count, reverse=True)
 					for e in buf:
-						if occupation2>capacity or e.count==0:
+						if occupation2>=capacity or e.count==0:
 							break
 						CL2.append(e.id)
 						occupation2+=1
+
 					
-					while occupation2<capacity:	
-						o=bounded_zipf.rvs()
-						while 1:
-							if o not in CL2:
-								CL2.append(o)
-								occupation2+=1
-								break
-							o=bounded_zipf.rvs()
+					for e in buf:
+						if occupation3>=capacity:
+							break 
+						if e not in CL3:
+							CL3[e.id]=0
+							occupation3+=1
 
-					'''for a in requests:
-							if occupation3<capacity and a not in CL3:
-								CL3[a]=0
-								occupation3+=1
-							if occupation4<capacity and a not in CL4:
-								CL4.append(a)
-								occupation4+=1'''
-					while occupation3<capacity:	
-						o=bounded_zipf.rvs()
-						while 1:
-							if o not in CL3:
-								CL3[o]=0
-								occupation3+=1
-								break
-							o=bounded_zipf.rvs()
-
+					for e in buf:
+						if occupation4>=capacity:
+							break
+						if e not in CL4:
+							CL4.append(e.id)
+							occupation4+=1					
+					
 					#print(day)
 					#print(len(requests))
-					#print(len(CL3))
 
 					#update parameter every time slot
 					for m in users:
@@ -239,6 +226,17 @@ for abcde in range(x_n):
 						day=72
 					if day>interval:
 						break
+					#print(CL2)
+				'''else:
+					for u in users:
+						if u.downloading:
+							bw=stats.rice.rvs(b)
+							q1.append(qa*math.log(bw)+qb*abs(bw-u.bt_1))
+
+							if :
+								u.watching=False
+								u.remain=0
+								u.cached=0	'''		
 
 
 	print(float(hit1)/count)
@@ -274,8 +272,8 @@ plt.plot(x,n3,"ro",)
 plt.plot(x,n4,"yo",)
 plt.plot(x,n1,"g",label='proposed')
 plt.plot(x,n2,"b",label='most popular')
-plt.plot(x,n3,"r",label='random')
-plt.plot(x,n4,"y",label='LFU')
+plt.plot(x,n3,"r",label='LFU')
+plt.plot(x,n4,"y",label='random')
 plt.xlabel("alpha")
 #plt.xlabel("cache size")
 #plt.ylabel("QoE")
