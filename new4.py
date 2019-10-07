@@ -3,7 +3,7 @@ import numpy as np
 #import tensorflow as tf
 from scipy import stats
 import matplotlib.pyplot as plt
-people=1005
+people=1900
 alpha=0.9
 Thb=20
 file_num=1000
@@ -15,7 +15,7 @@ qb=0.25
 qc=0.1
 qd=0.4
 x_n=14
-times=50
+times=30
 
 class user:
 	def __init__(self):
@@ -69,7 +69,7 @@ for abcde in range(x_n):
 		for i in range(1, file_num+1):
 			files.append(file(i))
 
-		with open('email-Eu-core-temporal.txt','r') as f:
+		with open('CollegeMsg.txt','r') as f:
 			q1=list()
 			q2=list()
 			q3=list()
