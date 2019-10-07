@@ -5,17 +5,14 @@ from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
 alpha=0.9
-Thb=50
 file_num=1000
-capacity=100
+capacity=0
 interval=431
-#b=3
-qa=0.25
-qb=0.25
-qc=0.1
-qd=0.4
+#b=4
+qa=0.5
+qb=0.5
 x_n=20
-times=30
+times=70
 
 class user:
 	def __init__(self):
@@ -153,23 +150,20 @@ for abcde in range(x_n):
 
 					#evaluate
 					for e in requests:
-						bt_1=stats.rice.rvs(3)
-						bt=stats.rice.rvs(3)
-						b=bt_1+(bt-bt_1)/3
-						#print(abs(b-bt_1))
 						if e in CL1:
 							hit1+=1
-							QoE1+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*1)
+							QoE1+=1
+
 						if e in CL2:
 							hit2+=1
-							QoE2+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
+							QoE2+=1
 						if e in CL3:
 							hit3+=1
 							CL3[e]+=1
-							QoE3+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
+							QoE3+=1
 						if e in CL4:
 							hit4+=1
-							QoE4+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
+							QoE4+=1
 
 					#determine cache
 					if occupation3>=capacity:
@@ -194,12 +188,6 @@ for abcde in range(x_n):
 						occupation1+=0.5
 
 					for e in buf:
-						if occupation3>=capacity:
-							break 
-						if e not in CL3:
-							CL3[e.id]=0
-							occupation3+=1
-					for e in buf:
 						if occupation4>=capacity:
 							break
 						if e not in CL4:
@@ -212,6 +200,13 @@ for abcde in range(x_n):
 							break
 						CL2.append(e.id)
 						occupation2+=1			
+
+					for e in buf:
+						if occupation3>=capacity:
+							break 
+						if e not in CL3:
+							CL3[e.id]=0
+							occupation3+=1
 
 					#update parameter every time slot
 					for m in users:
@@ -247,23 +242,23 @@ for abcde in range(x_n):
 								u.cached=0	'''		
 
 
-	'''print(float(hit1)/count)
+	print(float(hit1)/count)
 	print(float(hit2)/count)
 	print(float(hit3)/count)
 	print(float(hit4)/count)
 	n1.append(float(hit1)/count)
 	n2.append(float(hit2)/count)
 	n3.append(float(hit3)/count)
-	n4.append(float(hit4)/count)'''
+	n4.append(float(hit4)/count)
 
-	print(float(QoE1)/count)
-	print(float(QoE2+(count-hit2)*0.1)/count)
-	print(float(QoE3+(count-hit3)*0.1)/count)
-	print(float(QoE4+(count-hit4)*0.1)/count)
-	n1.append(float(QoE1)/count)
-	n2.append(float(QoE2)/count)
-	n3.append(float(QoE3)/count)
-	n4.append(float(QoE4)/count)
+	'''print(float(QoE1+(count-hit1)*0.3)/count)
+	print(float(QoE2+(count-hit2)*0.3)/count)
+	print(float(QoE3+(count-hit3)*0.3)/count)
+	print(float(QoE4+(count-hit4)*0.3)/count)
+	n1.append(float(QoE1+(count-hit1)*0.3)/count)
+	n2.append(float(QoE2+(count-hit2)*0.3)/count)
+	n3.append(float(QoE3+(count-hit3)*0.3)/count)
+	n4.append(float(QoE4+(count-hit4)*0.3)/count)'''
 
 
 	#alpha+=0.1
@@ -272,7 +267,7 @@ x=list()
 #for i in range(x_n):
 #	x.append(0.5+i*0.1)
 for i in range(x_n):
-	x.append(50+i*10)
+	x.append(i*10)
 
 plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
@@ -284,8 +279,8 @@ plt.plot(x,n3,"r",label='LFU')
 plt.plot(x,n4,"y",label='random')
 #plt.xlabel("alpha")
 plt.xlabel("cache size")
-plt.ylabel("QoE")
-#plt.ylabel("hit rate")
+#plt.ylabel("QoE")
+plt.ylabel("hit rate")
 plt.legend()
-plt.savefig('QoE.png',dpi=300)
+plt.savefig('hit.png',dpi=300)
 plt.show()

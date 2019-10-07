@@ -5,7 +5,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
 alpha=0.9
-Thb=50
+Thb=20
 file_num=1000
 capacity=100
 interval=431
@@ -14,8 +14,8 @@ qa=0.25
 qb=0.25
 qc=0.1
 qd=0.4
-x_n=20
-times=30
+x_n=14
+times=50
 
 class user:
 	def __init__(self):
@@ -47,21 +47,12 @@ n2=list()
 n3=list()
 n4=list()
 for abcde in range(x_n):
-	if abcde==0:
-		n1.append(0)
-		n2.append(0)
-		n3.append(0)
-		n4.append(0)
-		capacity+=10
-		continue
 	hit1=0
 	hit2=0
 	hit3=0
 	hit4=0
 	QoE1=0
 	QoE2=0
-	QoE3=0
-	QoE4=0
 	count=0
 	bound=np.arange(1, file_num)
 	weights=bound**(-alpha)
@@ -77,21 +68,10 @@ for abcde in range(x_n):
 			files.append(file(i))
 
 		with open('email-Eu-core-temporal.txt','r') as f:
-			q1=list()
-			q2=list()
-			q3=list()
-			q4=list()
-
-			occupation3=0
-			occupation4=0
 			edge=f.read().split()
 			ii=0
 			day=0
 			CL1=list()
-			CL2=list()
-			CL3=dict()
-			CL4=list()
-			#CL4=list(bounded_zipf.rvs(size=capacity))
 
 			while ii+1<len(edge):
 				timestamp=int((int(edge[ii+2]))/60/60/24)
@@ -150,6 +130,7 @@ for abcde in range(x_n):
 									for f in users[i].friends:
 										if np.random.rand()<users[i].friends[f]*users[i].friends[f]:
 											users[f].wait_watch.add(a)	
+					#print(len(requests))
 
 					#evaluate
 					for e in requests:
@@ -159,59 +140,25 @@ for abcde in range(x_n):
 						#print(abs(b-bt_1))
 						if e in CL1:
 							hit1+=1
-							QoE1+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*1)
-						if e in CL2:
-							hit2+=1
-							QoE2+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
-						if e in CL3:
-							hit3+=1
-							CL3[e]+=1
-							QoE3+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
-						if e in CL4:
-							hit4+=1
-							QoE4+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25+qd*0.85)
+							QoE1+=(qa*math.log(b)-qb*abs(b-bt_1)-qc*0.25)
+							QoE2+=(qa*math.log(b)-qc*0.25)
+							ava=float(Thb)/len(requests)/2
+							if ava>b:
+								QoE1+=1
+								QoE2+=1
+							else:
+								QoE1+=min(1,0.5*ava/(b-ava))
 
 					#determine cache
-					if occupation3>=capacity:
-						sortedLFU=sorted(CL3.items(), key=lambda kv: kv[1])
-						CL3.pop(sortedLFU[0][0])
-						occupation3-=1
-
-					if occupation4>=capacity:
-						CL4.pop(np.random.randint(len(CL4)))
-						occupation4-=1
-
-					occupation1=0
-					occupation2=0					
+					occupation1=0				
 					CL1=[]
-					CL2=[]
-					
+
 					buf=sorted(files, key=lambda x: x.score, reverse=True)
 					for e in buf:
 						if occupation1>=capacity:
 							break
 						CL1.append(e.id)
 						occupation1+=0.5
-
-					for e in buf:
-						if occupation3>=capacity:
-							break 
-						if e not in CL3:
-							CL3[e.id]=0
-							occupation3+=1
-					for e in buf:
-						if occupation4>=capacity:
-							break
-						if e not in CL4:
-							CL4.append(e.id)
-							occupation4+=1		
-
-					buf=sorted(files, key=lambda x: x.count, reverse=True)
-					for e in buf:
-						if occupation2>=capacity:
-							break
-						CL2.append(e.id)
-						occupation2+=1			
 
 					#update parameter every time slot
 					for m in users:
@@ -229,63 +176,28 @@ for abcde in range(x_n):
 						e.active=0
 
 					day+=1
-					#print(day)
 					if day==67:
 						day=72
 					if day>interval:
-						break
-					#print(len(CL4))
-				'''else:
-					for u in users:
-						if u.downloading:
-							bw=stats.rice.rvs(b)
-							q1.append(qa*math.log(bw)+qb*abs(bw-u.bt_1))
-
-							if :
-								u.watching=False
-								u.remain=0
-								u.cached=0	'''		
+						break		
 
 
-	'''print(float(hit1)/count)
-	print(float(hit2)/count)
-	print(float(hit3)/count)
-	print(float(hit4)/count)
-	n1.append(float(hit1)/count)
-	n2.append(float(hit2)/count)
-	n3.append(float(hit3)/count)
-	n4.append(float(hit4)/count)'''
-
-	print(float(QoE1)/count)
-	print(float(QoE2+(count-hit2)*0.1)/count)
-	print(float(QoE3+(count-hit3)*0.1)/count)
-	print(float(QoE4+(count-hit4)*0.1)/count)
+	print(abcde)
 	n1.append(float(QoE1)/count)
 	n2.append(float(QoE2)/count)
-	n3.append(float(QoE3)/count)
-	n4.append(float(QoE4)/count)
 
+	Thb+=10
 
-	#alpha+=0.1
-	capacity+=10
 x=list()
-#for i in range(x_n):
-#	x.append(0.5+i*0.1)
 for i in range(x_n):
-	x.append(50+i*10)
+	x.append(20+i*10)
 
 plt.plot(x,n1,"go",)
 plt.plot(x,n2,"bo",)
-plt.plot(x,n3,"ro",)
-plt.plot(x,n4,"yo",)
 plt.plot(x,n1,"g",label='proposed')
-plt.plot(x,n2,"b",label='most popular')
-plt.plot(x,n3,"r",label='LFU')
-plt.plot(x,n4,"y",label='random')
-#plt.xlabel("alpha")
-plt.xlabel("cache size")
+plt.plot(x,n2,"b",label='without transcoding')
+plt.xlabel("backhaul capacity (MB/s)")
 plt.ylabel("QoE")
-#plt.ylabel("hit rate")
 plt.legend()
-plt.savefig('QoE.png',dpi=300)
+plt.savefig('QoE-back-transcode.png',dpi=300)
 plt.show()

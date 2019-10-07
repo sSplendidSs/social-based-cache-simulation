@@ -150,6 +150,7 @@ for abcde in range(x_n):
 									for f in users[i].friends:
 										if np.random.rand()<users[i].friends[f]*users[i].friends[f]:
 											users[f].wait_watch.add(a)	
+					print(len(requests))
 
 					#evaluate
 					for e in requests:
@@ -267,7 +268,8 @@ for abcde in range(x_n):
 
 
 	#alpha+=0.1
-	capacity+=10
+	#capacity+=10
+	Thb+=10
 x=list()
 #for i in range(x_n):
 #	x.append(0.5+i*0.1)
