@@ -65,7 +65,7 @@ for abcde in range(x_n):
 		for i in range(1, file_num+1):
 			files.append(file(i))
 
-		with open('CollegeMsg.txt','r') as f:
+		with open('allinone.txt','r') as f:
 			q1=list()
 			q2=list()
 			q3=list()
@@ -83,7 +83,7 @@ for abcde in range(x_n):
 			#CL4=list(bounded_zipf.rvs(size=capacity))
 
 			while ii+1<len(edge):
-				timestamp=int((int(edge[ii+2])-1082040961)/60/60/24)
+				timestamp=int((int(edge[ii+2]))/60/60/24)
 				users[int(edge[ii])].connect[int(edge[ii+1])]+=1
 				users[int(edge[ii])].friends[int(edge[ii+1])]=0
 				users[int(edge[ii])].active+=1
