@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 people=1900+1005
 alpha=0.5
 file_num=5000
-capacity=100
+capacity=50
 interval=431
 b=4
 qa=0.5
@@ -220,18 +220,6 @@ for abcde in range(x_n):
 						day=72
 					if day>interval:
 						break
-					#print(len(CL4))
-				'''else:
-					for u in users:
-						if u.downloading:
-							bw=stats.rice.rvs(b)
-							q1.append(qa*math.log(bw)+qb*abs(bw-u.bt_1))
-
-							if :
-								u.watching=False
-								u.remain=0
-								u.cached=0	'''		
-
 
 	print(float(hit1)/count)
 	print(float(hit2)/count)
