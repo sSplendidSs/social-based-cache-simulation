@@ -1,7 +1,8 @@
 from statsmodels.tsa.arima_model import ARIMA
 from pandas import read_csv
 import matplotlib.pyplot as plt
-
+import numpy as np
+'''
 interaction=list()
 #1,320
 #2,172
@@ -54,12 +55,22 @@ for k in range(1):
 		y[k]/=m
 	print(t)
 	print(len(t))
-	print(len(y))
+	print(len(y))'''
+if __name__ == "__main__":	
+	y=list()
+	for i in range(14):
+		star=np.random.randint(6,12)
+		end=np.random.randint(17, 20)
+		for j in range(24):
+			if j%24>star and j%24<end:
+				y.append(1)
+			else:
+				y.append(0)
 
-	model = ARIMA(y, order=(10,0,0))
+	model = ARIMA(y, order=(5,0,0))
 	model_fit = model.fit(disp=0)
 	predictions = list()
-	for i in range(1,len(y)):
+	for i in range(0,len(y)):
 		output = model_fit.predict(start=i, end=i)[0]
 		if output<0:
 			output=0

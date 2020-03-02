@@ -1,6 +1,5 @@
 import math
 import numpy as np
-#import tensorflow as tf
 from scipy import stats
 import matplotlib.pyplot as plt
 people=1005
