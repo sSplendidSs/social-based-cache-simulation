@@ -25,6 +25,7 @@ class user:
 		self.remaining=300
 		self.cached=0
 		self.bt_1=0
+
 class file:
 	def __init__(self, file_name):
 		self.id=file_name
