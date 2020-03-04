@@ -2,16 +2,16 @@ import math
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
-people=1005
+people=1900+1005
 alpha=0.5
 file_num=5000
-capacity=100
+capacity=50
 interval=431
 b=4
 qa=0.5
 qb=0.5
-x_n=8
-times=50
+x_n=12
+times=1
 
 class user:
 	def __init__(self):
@@ -25,7 +25,6 @@ class user:
 		self.remaining=300
 		self.cached=0
 		self.bt_1=0
-
 class file:
 	def __init__(self, file_name):
 		self.id=file_name
@@ -66,7 +65,7 @@ for abcde in range(x_n):
 		for i in range(1, file_num+1):
 			files.append(file(i))
 
-		with open('email-Eu-core-temporal.txt','r') as f:
+		with open('allinone.txt','r') as f:
 			q1=list()
 			q2=list()
 			q3=list()
@@ -221,18 +220,6 @@ for abcde in range(x_n):
 						day=72
 					if day>interval:
 						break
-					#print(len(CL4))
-				'''else:
-					for u in users:
-						if u.downloading:
-							bw=stats.rice.rvs(b)
-							q1.append(qa*math.log(bw)+qb*abs(bw-u.bt_1))
-
-							if :
-								u.watching=False
-								u.remain=0
-								u.cached=0	'''		
-
 
 	print(float(hit1)/count)
 	print(float(hit2)/count)
