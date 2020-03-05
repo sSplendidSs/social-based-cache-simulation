@@ -1,6 +1,6 @@
 import numpy as np
-ThF=175
-users=25
+ThF=7500
+users=1000
 x=[0.8,1.5,4,7.5,12]
 bandwidth=np.random.normal(1.25*8,0.5*8,users)
 bitrate=[0]*users
@@ -18,6 +18,7 @@ for i in range(users):
 		if bitrate[i]>bandwidth[i]:
 			bitrate[i]=x[x.index(bitrate[i])-1]
 print(sum(bitrate))
+i=0
 optimal=False
 while not optimal:
 	for i in range(users):
@@ -25,5 +26,6 @@ while not optimal:
 			optimal=True
 			break
 		else:
-			print('hi')
+			i+=1
 			bitrate[i]=x[x.index(bitrate[i])-1]
+print(i)

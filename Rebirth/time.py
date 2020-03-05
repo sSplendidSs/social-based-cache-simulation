@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 q=5
-r=15
+r=5
 size=25
 x_num=1
 times=1
@@ -13,7 +13,7 @@ for i in range(x_num):
 	buf=[0]*4
 	users=dict()
 	video=dict()
-	vr=set()		
+	vr=set()
 	day=0
 	total=0
 	cache_0=list()
@@ -60,17 +60,19 @@ for i in range(x_num):
 								if users[u]['friend'][f] and users[f]['friend'][u]:
 									users[f]['wait_buf'].add(v)
 					users[u]['wait_watch']=set()
-					#video request
+				#video request
 				for u in users:
 					if users[u]['counter']:
 						if np.random.rand()<0.1:
-							v=str(np.random.rand())
-							#requests.append(v)
+							v=str(np.random.poisson(1000))
+							#v=str(np.random.rand())
+							requests.append(v)
 							vr.add(v)
-							video[v]=dict()
-							video[v]['view']=0
-							video[v]['count']=0
-							video[v]['recent']=0
+							if v not in video:
+								video[v]=dict()
+								video[v]['view']=0
+								video[v]['count']=0
+								video[v]['recent']=0
 							users[u]['seen'].add(v)
 							for f in users[u]['friend']:
 								if users[u]['friend'][f] and users[f]['friend'][u]:
@@ -86,7 +88,7 @@ for i in range(x_num):
 					if e in cache_3:
 						hit[3]+=1
 				total+=len(requests)
-				#print('day:',day,len(requests))
+				print('day:',day,len(requests))
 				result.append(len(requests))
 				sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
 				cache_0=list()
@@ -118,6 +120,8 @@ for i in range(x_num):
 					users[u]['counter']=0
 				if day%r==0:
 					vr=set()
+					for u in users:
+						users[u]['seen']=set()
 				if day%q==0:						
 					for v in video:
 						video[v]['count']=0
@@ -127,16 +131,16 @@ for i in range(x_num):
 
 				for k in range(4):
 					perform[k].append(hit[k])
-					print(hit[k])
+					#print(hit[k])
 				x.append(day)
-				if day>390:
+				if day>100:
 					break
-plt.plot(x,perform[0],"g",label='Hit-CSQCA')
-plt.plot(x,perform[1],"b",label='Hit-MP')
-plt.plot(x,perform[2],"y",label='Hit-LRU')
-plt.plot(x,perform[3],"r",label='Hit-Random')
+#plt.plot(x,perform[0],"g",label='Hit-CSQCA')
+#plt.plot(x,perform[1],"b",label='Hit-MP')
+#plt.plot(x,perform[2],"y",label='Hit-LRU')
+#plt.plot(x,perform[3],"r",label='Hit-Random')
 plt.plot(x,result,"k", )
-plt.xlabel("time slot (hour)")
+plt.xlabel("days")
 plt.ylabel("Number of requests")
 plt.legend()
-plt.savefig('realtime.jpg', dpi = 600)
+plt.savefig('realtime1.jpg', dpi = 600)
