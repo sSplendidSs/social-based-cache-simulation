@@ -10,7 +10,7 @@ q=2
 r=4
 size=5
 x_num=12
-times=30
+times=1
 x=list()
 perform=list()
 for i in range(5):	perform.append([])
@@ -22,11 +22,9 @@ for i in range(x_num):
 		vr=set()		
 		day=0
 		total=0
-		cache_0=list()
-		cache_1=list()
-		cache_2=list()
-		cache_3=list()
-		cache_4=list()
+		cache=list()
+		for alg in range(5):
+			cache.append([])
 		hit=[0]*5
 		for u in range(1900):
 			users[str(u)]=dict()
@@ -89,48 +87,41 @@ for i in range(x_num):
 										users[f]['wait_buf'].add(v)
 										video[v]['EN']+=1
 					for e in requests:
-						if e in cache_0:
-							hit[0]+=1
-						if e in cache_1:
-							hit[1]+=1
-						if e in cache_2:
-							hit[2]+=1
-						if e in cache_3:
-							hit[3]+=1
-						if e in cache_4:
-							hit[4]+=1							
+						for alg in range(len(cache)):
+							if e in cache[alg]:
+								hit[alg]+=1						
 					total+=len(requests)
 					#print('day:',day,len(requests))
 
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['EN'])
-					cache_0=list()
+					cache[0]=list()
 					for e in sortedv:
-						cache_0.append(e[0])
-						if len(cache_0)>1.15*size:
+						cache[0].append(e[0])
+						if len(cache[0])>1.15*size:
 							break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
-					cache_1=list()
+					cache[1]=list()
 					for e in sortedv:
-						cache_1.append(e[0])
-						if len(cache_1)>size:
+						cache[1].append(e[0])
+						if len(cache[1])>size:
 							break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['recent'])
-					cache_2=list()
+					cache[2]=list()
 					for e in sortedv:
-						cache_2.append(e[0])
-						if len(cache_2)>size:
+						cache[2].append(e[0])
+						if len(cache[2])>size:
 							break
-					cache_3=list()
+					cache[3]=list()
 					for e in vr:
-						if e not in cache_3:
-							cache_3.append(e)
-						if len(cache_3)>size:
+						if e not in cache[3]:
+							cache[3].append(e)
+						if len(cache[3])>size:
 							break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['ARC'])
-					cache_4=list()
+					cache[4]=list()
 					for e in sortedv:
-						cache_4.append(e[0])
-						if len(cache_4)>size:
+						cache[4].append(e[0])
+						if len(cache[4])>size:
 							break							
 					#for v in video:
 					#	video[v]['recent']=0
@@ -161,15 +152,15 @@ for i in range(x_num):
 	x.append((i+1)*10)
 	size+=5
 plt.plot(x,perform[0],"g",label='CSQCA')
+plt.plot(x,perform[4],"k",label='ARC')
 plt.plot(x,perform[1],"b",label='MP')
 plt.plot(x,perform[2],"y",label='LRU')
 plt.plot(x,perform[3],"r",label='RA')
-plt.plot(x,perform[4],"k",label='ARC')
 plt.plot(x,perform[0],"go")
+plt.plot(x,perform[4],"ko")
 plt.plot(x,perform[1],"bo")
 plt.plot(x,perform[2],"yo")
 plt.plot(x,perform[3],"ro")
-plt.plot(x,perform[4],"ko")
 plt.xlabel("Cache size (GB)")
 plt.ylabel("Hitrate")
 plt.legend()
