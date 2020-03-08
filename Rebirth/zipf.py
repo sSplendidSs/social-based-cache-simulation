@@ -1,32 +1,31 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-alpha=0.5
+alpha=0.7
 bound=np.arange(1, 10000)
-weights=bound**(-alpha)
-weights/=weights.sum()
-bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))
 q=2
 r=4
-size=5
+size=10
 x_num=12
 times=20
-poisson=0.07
 x=list()
 perform=list()
 for i in range(6):	perform.append([])
 for i in range(x_num):
 	buf=[0]*6
+	weights=bound**(-alpha)
+	weights/=weights.sum()
+	bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))	
 	for j in range(times):
 		users=dict()
 		video=dict()
-		vr=set()
+		vr=set()		
 		day=0
 		total=0
 		cache=list()
 		for alg in range(6):	cache.append([])
 		hit=[0]*6
-		'''for u in range(1900):
+		for u in range(1900):
 			users[str(u)]=dict()
 			users[str(u)]['friend']=dict()
 			users[str(u)]['seen']=set()
@@ -68,7 +67,9 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson:
+							if np.random.rand()<0.07:
+								#v=str(np.random.rand())
+								#v=str(np.random.poisson(2000))
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
@@ -86,7 +87,8 @@ for i in range(x_num):
 										video[v]['EN']+=1
 					for e in requests:
 						for alg in range(len(cache)):
-							if e in cache[alg]:	hit[alg]+=1						
+							if e in cache[alg]:
+								hit[alg]+=1						
 					total+=len(requests)
 					#print('day:',day,len(requests))
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['EN'])
@@ -103,7 +105,7 @@ for i in range(x_num):
 					cache[2]=list()
 					for e in sortedv:
 						cache[2].append(e[0])
-						if len(cache[2])>size:	break						
+						if len(cache[2])>size:	break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
 					cache[3]=list()
 					for e in sortedv:
@@ -119,6 +121,7 @@ for i in range(x_num):
 						if e not in cache[5]:
 							cache[5].append(e)
 						if len(cache[5])>size/1.15:	break
+
 					for u in users:
 						users[u]['counter']=0
 					if day%r==0:
@@ -135,11 +138,10 @@ for i in range(x_num):
 						for u in users:	
 							for f in users[u]['friend']:
 								users[u]['friend'][f]=0
-					if day>47:
-						break'''
+					if day>47:	break
 		users=dict()
 		video=dict()
-		vr=set()
+		vr=set()		
 		day=0
 		cache=list()
 		for alg in range(6):	cache.append([])
@@ -185,7 +187,7 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson*2:
+							if np.random.rand()<0.14:
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
@@ -203,7 +205,8 @@ for i in range(x_num):
 										video[v]['EN']+=1
 					for e in requests:
 						for alg in range(len(cache)):
-							if e in cache[alg]:	hit[alg]+=1						
+							if e in cache[alg]:
+								hit[alg]+=1						
 					total+=len(requests)
 					#print('day:',day,len(requests))
 
@@ -221,7 +224,7 @@ for i in range(x_num):
 					cache[2]=list()
 					for e in sortedv:
 						cache[2].append(e[0])
-						if len(cache[2])>size:	break						
+						if len(cache[2])>size:	break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
 					cache[3]=list()
 					for e in sortedv:
@@ -257,12 +260,11 @@ for i in range(x_num):
 						for k in range(6):
 							buf[k]+=hit[k]/total
 						break
-
 	for k in range(6):
 		perform[k].append(buf[k]/times)
 		print(buf[k]/times)
-	x.append((i+1)*10)
-	size+=5	
+	x.append(alpha)
+	alpha+=0.1
 plt.plot(x,perform[0],"g",label='CSQCA')
 plt.plot(x,perform[1],"k",label='CSQCA-F')
 plt.plot(x,perform[2],"m",label='ARC')
@@ -275,7 +277,7 @@ plt.plot(x,perform[2],"mo")
 plt.plot(x,perform[3],"bo")
 plt.plot(x,perform[4],"yo")
 plt.plot(x,perform[5],"ro")
-plt.xlabel("Cache size (GB)")
+plt.xlabel("ν")
 plt.ylabel("Hitrate")
 plt.legend()
-plt.savefig('hit_size2.jpg', dpi = 600)
+plt.savefig('zipf.jpg', dpi = 600)

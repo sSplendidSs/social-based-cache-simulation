@@ -1,6 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+from math import log10
+ThB=1.2
+UE=40
+qa=0.2
+qb=0.2
+qd=0.6
 alpha=0.5
 bound=np.arange(1, 10000)
 weights=bound**(-alpha)
@@ -11,7 +17,6 @@ r=4
 size=5
 x_num=12
 times=20
-poisson=0.07
 x=list()
 perform=list()
 for i in range(6):	perform.append([])
@@ -20,13 +25,13 @@ for i in range(x_num):
 	for j in range(times):
 		users=dict()
 		video=dict()
-		vr=set()
+		vr=set()		
 		day=0
 		total=0
 		cache=list()
 		for alg in range(6):	cache.append([])
-		hit=[0]*6
-		'''for u in range(1900):
+		QoE=[0]*6
+		for u in range(1900):
 			users[str(u)]=dict()
 			users[str(u)]['friend']=dict()
 			users[str(u)]['seen']=set()
@@ -68,7 +73,7 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson:
+							if np.random.rand()<0.05:
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
@@ -84,9 +89,13 @@ for i in range(x_num):
 									if users[u]['friend'][f] and users[f]['friend'][u]:
 										users[f]['wait_buf'].add(v)
 										video[v]['EN']+=1
+					#Evalutation
 					for e in requests:
-						for alg in range(len(cache)):
-							if e in cache[alg]:	hit[alg]+=1						
+						if e in cache[0]:	QoE[0]+=qa*log10(i+1+5)-qb*0.1+qd*0.9*min(1,1/(np.random.uniform(2,2.6)-ThB))
+						else:	QoE[0]+=qa*log10(i+1)-qb*0.6+qd*min(1,1/(np.random.uniform(2,10)-ThB))
+						for alg in range(1,len(cache)):
+							if e in cache[alg]:	QoE[alg]+=qa*log10(i+1+5)-qb*0.1+qd*min(1,1/(np.random.uniform(2,2.6)-ThB))
+							else:	QoE[alg]+=qa*log10(i+1)-qb*0.6+qd*min(1,1/(np.random.uniform(2,10)-ThB))
 					total+=len(requests)
 					#print('day:',day,len(requests))
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['EN'])
@@ -135,11 +144,10 @@ for i in range(x_num):
 						for u in users:	
 							for f in users[u]['friend']:
 								users[u]['friend'][f]=0
-					if day>47:
-						break'''
+					if day>47:	break
 		users=dict()
 		video=dict()
-		vr=set()
+		vr=set()		
 		day=0
 		cache=list()
 		for alg in range(6):	cache.append([])
@@ -185,7 +193,9 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson*2:
+							if np.random.rand()<0.1:
+								#v=str(np.random.rand())
+								#v=str(np.random.poisson(2000))
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
@@ -201,9 +211,13 @@ for i in range(x_num):
 									if users[u]['friend'][f] and users[f]['friend'][u]:
 										users[f]['wait_buf'].add(v)
 										video[v]['EN']+=1
+					#Evalutation
 					for e in requests:
-						for alg in range(len(cache)):
-							if e in cache[alg]:	hit[alg]+=1						
+						if e in cache[0]:	QoE[0]+=qa*log10(i+1+5)-qb*0.1+qd*0.9*min(1,1/(np.random.uniform(2,2.6)-ThB))
+						else:	QoE[0]+=qa*log10(i+1)-qb*0.6+qd*min(1,1/(np.random.uniform(2,10)-ThB))
+						for alg in range(1,len(cache)):
+							if e in cache[alg]:	QoE[alg]+=qa*log10(i+1+5)-qb*0.1+qd*min(1,1/(np.random.uniform(2,2.6)-ThB))
+							else:	QoE[alg]+=qa*log10(i+1)-qb*0.6+qd*min(1,1/(np.random.uniform(2,10)-ThB))
 					total+=len(requests)
 					#print('day:',day,len(requests))
 
@@ -237,6 +251,7 @@ for i in range(x_num):
 						if e not in cache[5]:
 							cache[5].append(e)
 						if len(cache[5])>size/1.15:	break
+
 					for u in users:
 						users[u]['counter']=0
 					if day%r==0:
@@ -254,15 +269,14 @@ for i in range(x_num):
 							for f in users[u]['friend']:
 								users[u]['friend'][f]=0
 					if day>47:
-						for k in range(6):
-							buf[k]+=hit[k]/total
+						for k in range(6):	buf[k]+=QoE[k]/total
 						break
 
 	for k in range(6):
 		perform[k].append(buf[k]/times)
 		print(buf[k]/times)
 	x.append((i+1)*10)
-	size+=5	
+	size+=5
 plt.plot(x,perform[0],"g",label='CSQCA')
 plt.plot(x,perform[1],"k",label='CSQCA-F')
 plt.plot(x,perform[2],"m",label='ARC')
@@ -276,6 +290,6 @@ plt.plot(x,perform[3],"bo")
 plt.plot(x,perform[4],"yo")
 plt.plot(x,perform[5],"ro")
 plt.xlabel("Cache size (GB)")
-plt.ylabel("Hitrate")
+plt.ylabel("QoE")
 plt.legend()
-plt.savefig('hit_size2.jpg', dpi = 600)
+plt.savefig('QoE_size5.jpg', dpi = 600)
