@@ -7,18 +7,19 @@ import numpy as np
 #3,90
 #4,146
 #all,1005
-'''interaction=list()
-continuous=list()	
-for a in range(1005):
+users=1005
+interaction=list()
+#continuous=list()	
+for a in range(users):
 	interaction.append([])
-	continuous.append([])
-	for b in range(1005):	
+	#continuous.append([])
+	for b in range(users):	
 		interaction[a].append(0)
-		continuous[a].append(0)'''
+		#continuous[a].append(0)
 
 for k in range(1):
 	y=list()
-	week=0
+	day=0
 	with open('email-Eu-core-temporal.txt','r') as f:
 		edge=f.read().split()
 		i=0
@@ -26,24 +27,34 @@ for k in range(1):
 		m=1
 		while i+1<len(edge):
 			time=int((int(edge[i+2]))/60/60/24)
-			#interaction[int(edge[i])][int(edge[i+1])]=1
-			if int(edge[i])==168:
+			interaction[int(edge[i])][int(edge[i+1])]=1
+			'''if int(edge[i])==168:
 				#m+=1
 				if int(edge[i+1])==912:
-					buf+=1
+					buf+=1'''
 			i+=3
-			if time>week:
-				y.append(buf/m)
+			if time>day:
+				day+=1
+				'''y.append(buf/m)
 				m=1
 				week+=1
 				print(week)
-				'''for a in range(1005):
+				for a in range(1005):
 					for b in range(1005):
 						if interaction[a][b]==1:
 							continuous[a][b]+=1
 							interaction[a][b]=0'''
-			if week>210:
+			if day>47:
 				break
+	inter_n=[0]*users
+	for i in range(users):
+		count=0
+		for j in range(users):
+			if interaction[i][j]==1:
+				count+=1
+		inter_n[i]=count
+	print(inter_n)
+	print(sum(inter_n)/users)
 	'''m=0
 	index=0
 	for a in range(1005):
@@ -54,7 +65,7 @@ for k in range(1):
 	print(m)
 	print(index)'''
 	#predictions = list()
-	model = ARIMA(y, order=(5,0,0))
+	'''model = ARIMA(y, order=(5,0,0))
 	model_fit = model.fit(disp=0,trend='nc')
 	predictions = list()
 	for i in range(len(y)):
@@ -67,7 +78,7 @@ for k in range(1):
 	plt.xlabel("time(days)")
 	plt.ylabel("value")
 	plt.legend()
-	plt.show()
+	plt.show()'''
 	'''
 	for i in range(len(t)):
 		t[i]=int(t[i])

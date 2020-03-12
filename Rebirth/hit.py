@@ -10,7 +10,7 @@ q=2
 r=4
 size=5
 x_num=12
-times=20
+times=1
 poisson=0.07
 x=list()
 perform=list()
@@ -185,7 +185,7 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson*2:
+							if np.random.rand()<poisson:
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
