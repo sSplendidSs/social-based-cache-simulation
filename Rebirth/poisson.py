@@ -16,7 +16,7 @@ bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))
 q=2
 r=4
 size=30
-x_num=10
+x_num=6
 times=20
 x=list()
 perform=list()
@@ -111,11 +111,11 @@ for i in range(x_num):
 					for e in sortedv:
 						cache[0].append(e[0])
 						if len(cache[0])>size/0.45:	break
-					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
+					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['EN'])
 					cache[1]=list()
 					for e in sortedv:
 						cache[1].append(e[0])
-						if len(cache[1])>1.2*size:	break
+						if len(cache[1])>1.125*size:	break
 					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['ARC'])
 					cache[2]=list()
 					for e in sortedv:
@@ -233,7 +233,7 @@ for i in range(x_num):
 					for e in sortedv:
 						cache[0].append(e[0])
 						if len(cache[0])>size/0.45:	break
-					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['count'])
+					sortedv=sorted(video.items(), key=lambda kv: -kv[1]['EN'])
 					cache[1]=list()
 					for e in sortedv:
 						cache[1].append(e[0])
@@ -283,19 +283,13 @@ for i in range(x_num):
 		perform[k].append(buf[k]/times)
 		print(buf[k]/times)
 	x.append(kkk)
-plt.plot(x,perform[0],"g",label='CSQCA')
-plt.plot(x,perform[1],"k",label='CSQCA-F')
-plt.plot(x,perform[2],"m",label='ARC')
-plt.plot(x,perform[3],"b",label='MP')
-plt.plot(x,perform[4],"y",label='LRU')
-plt.plot(x,perform[5],"r",label='RA')
-plt.plot(x,perform[0],"go")
-plt.plot(x,perform[1],"ko")
-plt.plot(x,perform[2],"mo")
-plt.plot(x,perform[3],"bo")
-plt.plot(x,perform[4],"yo")
-plt.plot(x,perform[5],"ro")
+plt.plot(x,perform[0],"go-",label='CSQCA')
+plt.plot(x,perform[1],"k*-",label='CSQCA-F')
+plt.plot(x,perform[2],"mH-",label='ARC')
+plt.plot(x,perform[3],"bs-",label='MP')
+plt.plot(x,perform[4],"yp-",label='LRU')
+plt.plot(x,perform[5],"rD-",label='RA')
 plt.xlabel("k")
 plt.ylabel("QoE")
 plt.legend()
-plt.savefig('QoE_k.jpg', dpi = 600)
+plt.savefig('QoE_k.png', dpi = 600)

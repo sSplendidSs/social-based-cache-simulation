@@ -9,7 +9,7 @@ bounded_zipf = stats.rv_discrete(name='bounded_zipf', values=(bound, weights))
 q=2
 r=4
 size=5
-x_num=12
+x_num=6
 times=1
 poisson=0.07
 x=list()
@@ -26,7 +26,7 @@ for i in range(x_num):
 		cache=list()
 		for alg in range(6):	cache.append([])
 		hit=[0]*6
-		'''for u in range(1900):
+		for u in range(1900):
 			users[str(u)]=dict()
 			users[str(u)]['friend']=dict()
 			users[str(u)]['seen']=set()
@@ -136,8 +136,10 @@ for i in range(x_num):
 							for f in users[u]['friend']:
 								users[u]['friend'][f]=0
 					if day>47:
-						break'''
-		users=dict()
+						for k in range(6):
+							buf[k]+=hit[k]/total						
+						break
+		'''users=dict()
 		video=dict()
 		vr=set()
 		day=0
@@ -185,7 +187,7 @@ for i in range(x_num):
 					#video request
 					for u in users:
 						if users[u]['counter']:
-							if np.random.rand()<poisson:
+							if np.random.rand()<poisson*2:
 								v=str(bounded_zipf.rvs())
 								users[u]['seen'].add(v)
 								requests.append(v)
@@ -256,26 +258,20 @@ for i in range(x_num):
 					if day>47:
 						for k in range(6):
 							buf[k]+=hit[k]/total
-						break
+						break'''
 
 	for k in range(6):
 		perform[k].append(buf[k]/times)
 		print(buf[k]/times)
-	x.append((i+1)*10)
-	size+=5	
-plt.plot(x,perform[0],"g",label='CSQCA')
-plt.plot(x,perform[1],"k",label='CSQCA-F')
-plt.plot(x,perform[2],"m",label='ARC')
-plt.plot(x,perform[3],"b",label='MP')
-plt.plot(x,perform[4],"y",label='LRU')
-plt.plot(x,perform[5],"r",label='RA')
-plt.plot(x,perform[0],"go")
-plt.plot(x,perform[1],"ko")
-plt.plot(x,perform[2],"mo")
-plt.plot(x,perform[3],"bo")
-plt.plot(x,perform[4],"yo")
-plt.plot(x,perform[5],"ro")
+	x.append((i+1)*20)
+	size+=10
+plt.plot(x,perform[0],"go-",label='CSQCA')
+plt.plot(x,perform[1],"k*-",label='CSQCA-F')
+plt.plot(x,perform[2],"mH-",label='ARC')
+plt.plot(x,perform[3],"bs-",label='MP')
+plt.plot(x,perform[4],"yp-",label='LRU')
+plt.plot(x,perform[5],"rD-",label='RA')
 plt.xlabel("Cache size (GB)")
 plt.ylabel("Hitrate")
 plt.legend()
-plt.savefig('hit_size2.jpg', dpi = 600)
+plt.savefig('hit_size1.png', dpi = 600, pad_inches=0)

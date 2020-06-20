@@ -183,8 +183,8 @@ for i in range(x_num):
 							users[u]['friend'][f]=0
 				if day>60:
 					break
-plt.plot(x,perform[0],"g--", label='Dataset 1')
-plt.plot(x,perform[1],"b-.", label='Dataset 2')
+plt.plot(x,perform[0],"b:", label='Dataset 1')
+plt.plot(x,perform[1],"g-", label='Dataset 2')
 plt.xlabel("Time slots (day)")
 plt.ylabel("Number of requests")
 plt.legend()
